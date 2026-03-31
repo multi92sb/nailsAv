@@ -51,7 +51,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
           email,
           phone,
           role,
-          passwordHash,
+          password: passwordHash,
           createdAt: new Date().toISOString(),
           entityType: 'USER',
         },

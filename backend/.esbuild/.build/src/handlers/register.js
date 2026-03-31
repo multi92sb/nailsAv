@@ -39370,7 +39370,7 @@ var handler = async (event) => {
           email,
           phone,
           role,
-          passwordHash,
+          password: passwordHash,
           createdAt: (/* @__PURE__ */ new Date()).toISOString(),
           entityType: "USER"
         }

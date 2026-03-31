@@ -1,5 +1,5 @@
 import type { APIGatewayProxyHandlerV2 } from 'aws-lambda';
-import { QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { ScanCommand } from '@aws-sdk/lib-dynamodb';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { docClient, TABLE_NAME } from '../db/client';
@@ -18,25 +18,39 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
 
     const { email, password } = parsed.data;
 
+    // 🔥 koristi Scan (radi sigurno lokalno)
     const result = await docClient.send(
-      new QueryCommand({
+      new ScanCommand({
         TableName: TABLE_NAME,
-        IndexName: 'EmailIndex',
-        KeyConditionExpression: 'email = :email',
-        ExpressionAttributeValues: { ':email': email },
-        Limit: 1,
+        FilterExpression: 'email = :email',
+        ExpressionAttributeValues: {
+          ':email': email,
+        },
       }),
     );
 
     const user = result.Items?.[0];
-    // Use constant-time comparison: always run bcrypt.compare to avoid timing attacks
-    const passwordHash = user?.passwordHash ?? '$2b$12$invalidhashfortimingprotection00000000000000000';
+
+    // 🔥 fallback hash (da bcrypt ne pukne)
+    const passwordHash =
+      user?.password ||
+      user?.passwordHash ||
+      '$2b$12$invalidhashfortimingprotection00000000000000000';
+
     const valid = await bcrypt.compare(password, passwordHash);
 
-    if (!user || !valid) return unauthorized('Invalid email or password');
+    if (!user || !valid) {
+      return unauthorized('Invalid email or password');
+    }
 
     const role = (user.role as 'USER' | 'ADMIN' | undefined) ?? 'USER';
-    const token = signToken({ userId: user.userId, email: user.email, role });
+
+    const token = signToken({
+      userId: user.userId,
+      email: user.email,
+      role,
+    });
+
     return ok({
       token,
       user: {

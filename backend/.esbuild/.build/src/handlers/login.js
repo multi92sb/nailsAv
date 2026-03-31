@@ -27904,7 +27904,7 @@ var require_dist_cjs58 = __commonJS({
       return [middlewareEndpoint.getEndpointPlugin(config, Command.getEndpointParameterInstructions())];
     }).s("DynamoDB_20120810", "PutResourcePolicy", {}).n("DynamoDBClient", "PutResourcePolicyCommand").sc(schemas_0.PutResourcePolicy$).build() {
     };
-    var QueryCommand2 = class extends smithyClient.Command.classBuilder().ep({
+    var QueryCommand = class extends smithyClient.Command.classBuilder().ep({
       ...commonParams5,
       ResourceArn: { type: "contextParams", name: "TableName" }
     }).m(function(Command, cs, config, o5) {
@@ -27925,7 +27925,7 @@ var require_dist_cjs58 = __commonJS({
       return [middlewareEndpoint.getEndpointPlugin(config, Command.getEndpointParameterInstructions())];
     }).s("DynamoDB_20120810", "RestoreTableToPointInTime", {}).n("DynamoDBClient", "RestoreTableToPointInTimeCommand").sc(schemas_0.RestoreTableToPointInTime$).build() {
     };
-    var ScanCommand = class extends smithyClient.Command.classBuilder().ep({
+    var ScanCommand2 = class extends smithyClient.Command.classBuilder().ep({
       ...commonParams5,
       ResourceArn: { type: "contextParams", name: "TableName" }
     }).m(function(Command, cs, config, o5) {
@@ -28027,8 +28027,8 @@ var require_dist_cjs58 = __commonJS({
     var paginateListExports = core.createPaginator(DynamoDBClient2, ListExportsCommand, "NextToken", "NextToken", "MaxResults");
     var paginateListImports = core.createPaginator(DynamoDBClient2, ListImportsCommand, "NextToken", "NextToken", "PageSize");
     var paginateListTables = core.createPaginator(DynamoDBClient2, ListTablesCommand, "ExclusiveStartTableName", "LastEvaluatedTableName", "Limit");
-    var paginateQuery = core.createPaginator(DynamoDBClient2, QueryCommand2, "ExclusiveStartKey", "LastEvaluatedKey", "Limit");
-    var paginateScan = core.createPaginator(DynamoDBClient2, ScanCommand, "ExclusiveStartKey", "LastEvaluatedKey", "Limit");
+    var paginateQuery = core.createPaginator(DynamoDBClient2, QueryCommand, "ExclusiveStartKey", "LastEvaluatedKey", "Limit");
+    var paginateScan = core.createPaginator(DynamoDBClient2, ScanCommand2, "ExclusiveStartKey", "LastEvaluatedKey", "Limit");
     var checkState$5 = async (client, input) => {
       let reason;
       try {
@@ -28289,10 +28289,10 @@ var require_dist_cjs58 = __commonJS({
       ListTagsOfResourceCommand,
       PutItemCommand,
       PutResourcePolicyCommand,
-      QueryCommand: QueryCommand2,
+      QueryCommand,
       RestoreTableFromBackupCommand,
       RestoreTableToPointInTimeCommand,
-      ScanCommand,
+      ScanCommand: ScanCommand2,
       TagResourceCommand,
       TransactGetItemsCommand,
       TransactWriteItemsCommand,
@@ -28644,7 +28644,7 @@ var require_dist_cjs58 = __commonJS({
     exports2.ProjectionType = ProjectionType;
     exports2.PutItemCommand = PutItemCommand;
     exports2.PutResourcePolicyCommand = PutResourcePolicyCommand;
-    exports2.QueryCommand = QueryCommand2;
+    exports2.QueryCommand = QueryCommand;
     exports2.ReplicaStatus = ReplicaStatus;
     exports2.RestoreTableFromBackupCommand = RestoreTableFromBackupCommand;
     exports2.RestoreTableToPointInTimeCommand = RestoreTableToPointInTimeCommand;
@@ -28656,7 +28656,7 @@ var require_dist_cjs58 = __commonJS({
     exports2.SSEStatus = SSEStatus;
     exports2.SSEType = SSEType;
     exports2.ScalarAttributeType = ScalarAttributeType;
-    exports2.ScanCommand = ScanCommand;
+    exports2.ScanCommand = ScanCommand2;
     exports2.Select = Select;
     exports2.StreamViewType = StreamViewType;
     exports2.TableClass = TableClass;
@@ -29096,7 +29096,7 @@ var require_dist_cjs59 = __commonJS({
         return async () => handler2(this.clientCommand);
       }
     };
-    var QueryCommand2 = class extends DynamoDBDocumentClientCommand {
+    var QueryCommand = class extends DynamoDBDocumentClientCommand {
       input;
       inputKeyNodes = {
         "KeyConditions": {
@@ -29133,7 +29133,7 @@ var require_dist_cjs59 = __commonJS({
         return async () => handler2(this.clientCommand);
       }
     };
-    var ScanCommand = class extends DynamoDBDocumentClientCommand {
+    var ScanCommand2 = class extends DynamoDBDocumentClientCommand {
       input;
       inputKeyNodes = {
         "ScanFilter": {
@@ -29301,8 +29301,8 @@ var require_dist_cjs59 = __commonJS({
       destroy() {
       }
     };
-    var paginateQuery = core$1.createPaginator(DynamoDBDocumentClient2, QueryCommand2, "ExclusiveStartKey", "LastEvaluatedKey", "Limit");
-    var paginateScan = core$1.createPaginator(DynamoDBDocumentClient2, ScanCommand, "ExclusiveStartKey", "LastEvaluatedKey", "Limit");
+    var paginateQuery = core$1.createPaginator(DynamoDBDocumentClient2, QueryCommand, "ExclusiveStartKey", "LastEvaluatedKey", "Limit");
+    var paginateScan = core$1.createPaginator(DynamoDBDocumentClient2, ScanCommand2, "ExclusiveStartKey", "LastEvaluatedKey", "Limit");
     var DynamoDBDocument = class _DynamoDBDocument extends DynamoDBDocumentClient2 {
       static from(client, translateConfig) {
         return new _DynamoDBDocument(client, translateConfig);
@@ -29412,7 +29412,7 @@ var require_dist_cjs59 = __commonJS({
         }
       }
       query(args, optionsOrCb, cb) {
-        const command = new QueryCommand2(args);
+        const command = new QueryCommand(args);
         if (typeof optionsOrCb === "function") {
           this.send(command, optionsOrCb);
         } else if (typeof cb === "function") {
@@ -29425,7 +29425,7 @@ var require_dist_cjs59 = __commonJS({
         }
       }
       scan(args, optionsOrCb, cb) {
-        const command = new ScanCommand(args);
+        const command = new ScanCommand2(args);
         if (typeof optionsOrCb === "function") {
           this.send(command, optionsOrCb);
         } else if (typeof cb === "function") {
@@ -29491,8 +29491,8 @@ var require_dist_cjs59 = __commonJS({
     exports2.ExecuteTransactionCommand = ExecuteTransactionCommand;
     exports2.GetCommand = GetCommand;
     exports2.PutCommand = PutCommand;
-    exports2.QueryCommand = QueryCommand2;
-    exports2.ScanCommand = ScanCommand;
+    exports2.QueryCommand = QueryCommand;
+    exports2.ScanCommand = ScanCommand2;
     exports2.TransactGetCommand = TransactGetCommand;
     exports2.TransactWriteCommand = TransactWriteCommand;
     exports2.UpdateCommand = UpdateCommand;
@@ -39292,20 +39292,26 @@ var handler = async (event) => {
     if (!parsed.success) return badRequest(parsed.error.issues[0].message);
     const { email, password } = parsed.data;
     const result = await docClient.send(
-      new import_lib_dynamodb2.QueryCommand({
+      new import_lib_dynamodb2.ScanCommand({
         TableName: TABLE_NAME,
-        IndexName: "EmailIndex",
-        KeyConditionExpression: "email = :email",
-        ExpressionAttributeValues: { ":email": email },
-        Limit: 1
+        FilterExpression: "email = :email",
+        ExpressionAttributeValues: {
+          ":email": email
+        }
       })
     );
     const user = result.Items?.[0];
-    const passwordHash = user?.passwordHash ?? "$2b$12$invalidhashfortimingprotection00000000000000000";
+    const passwordHash = user?.password || user?.passwordHash || "$2b$12$invalidhashfortimingprotection00000000000000000";
     const valid = await import_bcryptjs.default.compare(password, passwordHash);
-    if (!user || !valid) return unauthorized("Invalid email or password");
+    if (!user || !valid) {
+      return unauthorized("Invalid email or password");
+    }
     const role = user.role ?? "USER";
-    const token = signToken({ userId: user.userId, email: user.email, role });
+    const token = signToken({
+      userId: user.userId,
+      email: user.email,
+      role
+    });
     return ok({
       token,
       user: {
