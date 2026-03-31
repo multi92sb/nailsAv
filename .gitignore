@@ -1,0 +1,7 @@
+docker-compose.yaml
+dynamodb-data/
+env
+build
+serverless
+node_modules
+dist

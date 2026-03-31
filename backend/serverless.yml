@@ -1,0 +1,206 @@
+service: nail-booking-backend
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ${opt:region, 'eu-west-1'}
+  stage: ${opt:stage, 'dev'}
+  environment:
+    TABLE_NAME: ${self:custom.tableName}
+    JWT_SECRET: ${env:JWT_SECRET, 'local-dev-secret-change-in-production'}
+    SES_FROM_EMAIL: ${env:SES_FROM_EMAIL, 'noreply@localhost.dev'}
+    MEDIA_BUCKET: ${self:custom.mediaBucket}
+    ENABLE_SMS: ${env:ENABLE_SMS, 'false'}
+    TWILIO_ACCOUNT_SID: ${env:TWILIO_ACCOUNT_SID, ''}
+    TWILIO_AUTH_TOKEN: ${env:TWILIO_AUTH_TOKEN, ''}
+    TWILIO_FROM_PHONE: ${env:TWILIO_FROM_PHONE, ''}
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1'
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:GetItem
+            - dynamodb:UpdateItem
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:TransactWriteItems
+            - dynamodb:BatchWriteItem
+          Resource:
+            - !GetAtt NailBookingTable.Arn
+            - !Sub '${NailBookingTable.Arn}/index/*'
+        - Effect: Allow
+          Action:
+            - ses:SendEmail
+            - ses:SendRawEmail
+          Resource: '*'
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:ListBucket
+          Resource:
+            - !GetAtt MediaBucket.Arn
+            - !Sub '${MediaBucket.Arn}/*'
+  httpApi:
+    cors: true
+    authorizers:
+      jwtAuthorizer:
+        type: request
+        functionName: authorizer
+        enableSimpleResponses: true
+        identitySource: $request.header.Authorization
+
+custom:
+  tableName: NailBooking-${sls:stage}
+  mediaBucket: nail-booking-media-${sls:stage}
+  serverless-offline:
+    httpPort: 4000
+    noPrependStageInUrl: true
+  esbuild:
+    bundle: true
+    minify: false
+    sourcemap: true
+    target: node20
+    platform: node
+    concurrency: 10
+
+functions:
+  authorizer:
+    handler: src/handlers/authorizer.handler
+
+  register:
+    handler: src/handlers/register.handler
+    events:
+      - httpApi:
+          path: /users
+          method: POST
+
+  login:
+    handler: src/handlers/login.handler
+    events:
+      - httpApi:
+          path: /login
+          method: POST
+
+  adminLogin:
+    handler: src/handlers/adminLogin.handler
+    events:
+      - httpApi:
+          path: /admin/login
+          method: POST
+
+  getSlots:
+    handler: src/handlers/getSlots.handler
+    events:
+      - httpApi:
+          path: /available-slots
+          method: GET
+          authorizer:
+            name: jwtAuthorizer
+
+  createBooking:
+    handler: src/handlers/createBooking.handler
+    events:
+      - httpApi:
+          path: /booking
+          method: POST
+          authorizer:
+            name: jwtAuthorizer
+
+  getBookingsByDate:
+    handler: src/handlers/getBookingsByDate.handler
+    events:
+      - httpApi:
+          path: /admin/bookings
+          method: GET
+          authorizer:
+            name: jwtAuthorizer
+
+  getMedia:
+    handler: src/handlers/getMedia.handler
+    events:
+      - httpApi:
+          path: /media
+          method: GET
+
+  getUsers:
+    handler: src/handlers/getUsers.handler
+    events:
+      - httpApi:
+          path: /users
+          method: GET
+          authorizer:
+            name: jwtAuthorizer
+
+  setUserRole:
+    handler: src/handlers/setUserRole.handler
+    events:
+      - httpApi:
+          path: /admin/users/{userId}/role
+          method: PATCH
+          authorizer:
+            name: jwtAuthorizer
+
+  reminder:
+    handler: src/handlers/reminder.handler
+    events:
+      - schedule: cron(0 9 * * ? *)
+
+resources:
+  Resources:
+    NailBookingTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.tableName}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: PK
+            AttributeType: S
+          - AttributeName: SK
+            AttributeType: S
+          - AttributeName: email
+            AttributeType: S
+          - AttributeName: bookingDate
+            AttributeType: S
+          - AttributeName: bookingTimeSlot
+            AttributeType: S
+        KeySchema:
+          - AttributeName: PK
+            KeyType: HASH
+          - AttributeName: SK
+            KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: EmailIndex
+            KeySchema:
+              - AttributeName: email
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+          - IndexName: BookingByDate
+            KeySchema:
+              - AttributeName: bookingDate
+                KeyType: HASH
+              - AttributeName: bookingTimeSlot
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+
+    MediaBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.mediaBucket}
+        CorsConfiguration:
+          CorsRules:
+            - AllowedOrigins:
+                - '*'
+              AllowedMethods:
+                - GET
+                - HEAD
+              AllowedHeaders:
+                - '*'
+
+plugins:
+  - serverless-esbuild
+  - serverless-offline
