@@ -103,10 +103,10 @@ export const api = {
   adminLogin: (body: { email: string; password: string }) =>
     request<{ token: string; user: User }>('/admin/login', { method: 'POST', body }),
 
-  getBookingsByDate: (date: string, adminToken: string) =>
+  getBookingsByDate: (date: string, adminToken?: string | null) =>
     request<{ bookings: AdminBooking[] }>(`/admin/bookings?date=${date}`, {
       auth: true,
-      tokenOverride: adminToken,
+      tokenOverride: adminToken ?? null,
     }),
 
   getMedia: () => request<{ media: { key: string; url: string }[] }>('/media'),

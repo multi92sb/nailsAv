@@ -64,7 +64,7 @@ async function seedAdmin() {
         SK: 'PROFILE',
         userId: 'admin',
         email,
-        password: passwordHash, // IMPORTANT: isto kao register
+        password: passwordHash, 
         role: 'ADMIN',
         firstName: 'Admin',
         lastName: 'User',

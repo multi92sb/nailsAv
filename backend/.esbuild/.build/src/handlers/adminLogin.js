@@ -39306,7 +39306,7 @@ var handler = async (event) => {
       })
     );
     const user = result.Items?.[0];
-    const passwordHash = user?.passwordHash ?? "$2b$12$invalidhashfortimingprotection00000000000000000";
+    const passwordHash = user?.password || user?.passwordHash || "$2b$12$invalidhashfortimingprotection00000000000000000";
     const valid = await import_bcryptjs.default.compare(password, passwordHash);
     if (!user || !valid) return unauthorized("Invalid email or password");
     const role = user.role ?? "USER";

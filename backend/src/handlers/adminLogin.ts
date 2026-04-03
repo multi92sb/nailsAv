@@ -30,7 +30,10 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
 
     const user = result.Items?.[0];
     // Use constant-time comparison: always run bcrypt.compare to avoid timing attacks
-    const passwordHash = user?.passwordHash ?? '$2b$12$invalidhashfortimingprotection00000000000000000';
+    const passwordHash =
+      user?.password ||
+      user?.passwordHash ||
+      '$2b$12$invalidhashfortimingprotection00000000000000000';
     const valid = await bcrypt.compare(password, passwordHash);
 
     if (!user || !valid) return unauthorized('Invalid email or password');

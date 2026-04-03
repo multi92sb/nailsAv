@@ -7,7 +7,11 @@
     "deploy:staging": "serverless deploy --stage staging",
     "deploy:prod": "serverless deploy --stage prod",
     "seed": "ts-node -r tsconfig-paths/register src/scripts/seed.ts",
-    "test": "jest"
+    "test": "jest",
+    "dynamo:start": "node tools/runDynamoLocal.js",
+    "dynamo:admin": "node tools/runDynamoAdmin.js",
+    "dynamo:create-table": "ts-node src/scripts/createTable.ts",
+    "dynamo:seed": "npm run seed"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.600.0",
@@ -28,6 +32,8 @@
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20.14.0",
     "@types/uuid": "^9.0.8",
+    "dynamodb-admin": "^4.6.1",
+    "dynamodb-localhost": "^0.0.9",
     "esbuild": "^0.21.5",
     "jest": "^29.7.0",
     "serverless": "^3.38.0",
