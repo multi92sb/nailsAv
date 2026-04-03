@@ -1,9 +1,13 @@
-env
+.env
+.env.*
+!.env.example
+
 build/
+dist/
 serverless/
 node_modules/
-dist/
 esbuild/
+.esbuild/
 
 backend/dynamodb-local/
 backend/.dynamodb/
