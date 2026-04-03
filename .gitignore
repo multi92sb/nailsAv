@@ -1,7 +1,11 @@
 env
-build
-serverless
-node_modules
-dist
-esbuild
-\backend\dynamodb-local
+build/
+serverless/
+node_modules/
+dist/
+esbuild/
+
+backend/dynamodb-local/
+backend/.dynamodb/
+backend/dynamodb_local_latest.zip
+backend/dynamodb-local-metadata.json
