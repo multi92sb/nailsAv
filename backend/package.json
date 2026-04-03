@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "serverless offline",
-    "deploy:staging": "serverless deploy --stage staging",
+    "deploy:stage": "serverless deploy --stage stage",
     "deploy:prod": "serverless deploy --stage prod",
     "seed": "ts-node -r tsconfig-paths/register src/scripts/seed.ts",
     "test": "jest",

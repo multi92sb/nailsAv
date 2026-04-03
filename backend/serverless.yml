@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://json-schema.org/draft/2020-12/schema
 service: nail-booking-backend
 frameworkVersion: '3'
 
@@ -5,11 +6,12 @@ provider:
   name: aws
   runtime: nodejs20.x
   region: ${opt:region, 'eu-west-1'}
-  stage: ${opt:stage, 'dev'}
+  stage: ${opt:stage, 'stage'}
   environment:
+    APP_STAGE: ${sls:stage}
     TABLE_NAME: ${self:custom.tableName}
-    JWT_SECRET: ${env:JWT_SECRET, 'local-dev-secret-change-in-production'}
-    SES_FROM_EMAIL: ${env:SES_FROM_EMAIL, 'noreply@localhost.dev'}
+    JWT_SECRET: ${env:JWT_SECRET}
+    SES_FROM_EMAIL: ${env:SES_FROM_EMAIL}
     MEDIA_BUCKET: ${self:custom.mediaBucket}
     ENABLE_SMS: ${env:ENABLE_SMS, 'false'}
     TWILIO_ACCOUNT_SID: ${env:TWILIO_ACCOUNT_SID, ''}
@@ -29,8 +31,8 @@ provider:
             - dynamodb:TransactWriteItems
             - dynamodb:BatchWriteItem
           Resource:
-            - !GetAtt NailBookingTable.Arn
-            - !Sub '${NailBookingTable.Arn}/index/*'
+            - Fn::GetAtt: [NailBookingTable, Arn]
+            - Fn::Sub: '${NailBookingTable.Arn}/index/*'
         - Effect: Allow
           Action:
             - ses:SendEmail
@@ -41,8 +43,8 @@ provider:
             - s3:GetObject
             - s3:ListBucket
           Resource:
-            - !GetAtt MediaBucket.Arn
-            - !Sub '${MediaBucket.Arn}/*'
+            - Fn::GetAtt: [MediaBucket, Arn]
+            - Fn::Sub: '${MediaBucket.Arn}/*'
   httpApi:
     cors: true
     authorizers:
@@ -54,7 +56,7 @@ provider:
 
 custom:
   tableName: NailBooking-${sls:stage}
-  mediaBucket: nail-booking-media-${sls:stage}
+  mediaBucket: nail-booking-media-${aws:accountId}-${sls:stage}
   serverless-offline:
     httpPort: 4000
     noPrependStageInUrl: true
