@@ -64,23 +64,22 @@ Important behavior:
 
 ### 6. Frontend admin flow
 
-The frontend admin panel uses a two-step authentication flow:
+The frontend admin panel currently uses a one-step authentication flow:
 
 1. Standard user login
-2. Admin verification login
+2. Access is granted to admin pages if the logged-in user role is `ADMIN`
 
 Important detail:
 
 - The normal user token is stored in `localStorage`
-- The admin verification token is stored in `sessionStorage`
+- Admin route protection checks `token` + `user.role === 'ADMIN'`
 
 Relevant files:
 
 - `frontend/src/context/AuthContext.tsx`
 - `frontend/src/components/AdminRoute.tsx`
-- `frontend/src/pages/AdminLoginPage.tsx`
 
-This means that a successful `/admin/login` call from Postman alone is not enough to unlock the admin UI in the browser. The frontend must store the tokens through its own login flow.
+The `/admin/login` endpoint and `AdminLoginPage` still exist as an optional extra verification flow, but they are not required for entering admin routes.
 
 ## Useful Commands
 
@@ -100,7 +99,28 @@ npm run dev
 
 - API should run on `http://localhost:4000`
 
-### Admin API login test
+### Admin login test
+
+Use:
+
+- `POST http://localhost:4000/login`
+
+Request body:
+
+```json
+{
+  "email": "admin@nails.com",
+  "password": "admin123"
+}
+```
+
+Expected successful response:
+
+- `token`
+- `user.userId = admin`
+- `user.role = ADMIN`
+
+### Optional admin verification endpoint test
 
 Use:
 
@@ -139,4 +159,4 @@ Check that the seeded admin item exists with:
 - The seed script does not update an existing admin record.
 - If an old or broken admin record already exists, delete only that item and run the seed again.
 - Public signup creates only `USER` accounts.
-- Admin access is currently granted by seed data or by a role update flow after login.
+- Admin access is granted by role after normal login (`role = ADMIN`).

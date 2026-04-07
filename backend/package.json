@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "serverless offline",
-    "deploy:stage": "serverless deploy --stage stage",
-    "deploy:prod": "serverless deploy --stage prod",
+    "deploy:stage": "node tools/runServerlessWithEnv.js deploy stage",
+    "deploy:prod": "node tools/runServerlessWithEnv.js deploy prod",
     "seed": "ts-node -r tsconfig-paths/register src/scripts/seed.ts",
     "test": "jest",
     "dynamo:start": "node tools/runDynamoLocal.js",
