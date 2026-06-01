@@ -56,7 +56,7 @@ provider:
 
 custom:
   tableName: NailBooking-${sls:stage}
-  mediaBucket: nail-booking-media-${aws:accountId}-${sls:stage}
+  mediaBucket: ${env:MEDIA_BUCKET, 'nail-booking-media-local-${sls:stage}'}
   serverless-offline:
     httpPort: 4000
     noPrependStageInUrl: true
