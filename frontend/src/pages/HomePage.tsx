@@ -39,15 +39,32 @@ export default function HomePage() {
         <h2 className="text-4xl font-bold text-gray-800 mb-4">
           {user?.firstName} {user?.lastName}
         </h2>
-        <p className="text-gray-500 mb-10 max-w-sm mx-auto leading-relaxed">
-          Ready for your next nail appointment? Browse available slots and book in seconds.
-        </p>
-        <button
-          onClick={() => navigate('/book')}
-          className="bg-rose-600 hover:bg-rose-700 text-white font-semibold px-10 py-3.5 rounded-xl text-lg transition shadow-sm"
-        >
-          Book Appointment
-        </button>
+
+        {user?.role === 'ADMIN' ? (
+          <>
+            <p className="text-gray-500 mb-10 max-w-sm mx-auto leading-relaxed">
+              Manage bookings, users, and keep your salon running smoothly.
+            </p>
+            <button
+              onClick={() => navigate('/admin/bookings')}
+              className="bg-rose-600 hover:bg-rose-700 text-white font-semibold px-10 py-3.5 rounded-xl text-lg transition shadow-sm"
+            >
+              View Bookings
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="text-gray-500 mb-10 max-w-sm mx-auto leading-relaxed">
+              Ready for your next nail appointment? Browse available slots and book in seconds.
+            </p>
+            <button
+              onClick={() => navigate('/book')}
+              className="bg-rose-600 hover:bg-rose-700 text-white font-semibold px-10 py-3.5 rounded-xl text-lg transition shadow-sm"
+            >
+              Book Appointment
+            </button>
+          </>
+        )}
       </main>
     </div>
   );
