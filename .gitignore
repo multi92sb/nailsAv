@@ -1,15 +1,27 @@
+# Environment files
 .env
 .env.*
 !.env.example
 
+# Build output
 build/
 dist/
-.serverless/
-node_modules/
-esbuild/
 .esbuild/
+esbuild/
 
+# Dependencies
+node_modules/
+
+# Serverless Framework
+.serverless/
+
+# DynamoDB Local
 backend/dynamodb-local/
 backend/.dynamodb/
 backend/dynamodb_local_latest.zip
 backend/dynamodb-local-metadata.json
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+*.log
