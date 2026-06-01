@@ -1,0 +1,536 @@
+{
+  "C:\\gitHubBrame\\nailsAv\\backend\\serverless.yml": {
+    "versionFramework": "4.36.1",
+    "servicePath": "C:\\gitHubBrame\\nailsAv\\backend\\serverless.yml",
+    "serviceConfigFileName": "serverless.yml",
+    "service": {
+      "service": "nail-booking-backend",
+      "frameworkVersion": "3",
+      "useDotenv": true,
+      "provider": {
+        "name": "aws",
+        "runtime": "nodejs20.x",
+        "region": "eu-west-1",
+        "stage": "stage",
+        "environment": {
+          "APP_STAGE": "stage",
+          "TABLE_NAME": "NailBooking-stage",
+          "JWT_SECRET": "<REDACTED>",
+          "SES_FROM_EMAIL": "noreply@podinario.rs",
+          "MEDIA_BUCKET": "nail-booking-media-277707135514-stage",
+          "ENABLE_SMS": "false",
+          "TWILIO_ACCOUNT_SID": "",
+          "TWILIO_AUTH_TOKEN": "<REDACTED>",
+          "TWILIO_FROM_PHONE": "",
+          "AWS_NODEJS_CONNECTION_REUSE_ENABLED": "1"
+        },
+        "iam": {
+          "role": {
+            "statements": [
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "dynamodb:PutItem",
+                  "dynamodb:GetItem",
+                  "dynamodb:UpdateItem",
+                  "dynamodb:Query",
+                  "dynamodb:Scan",
+                  "dynamodb:TransactWriteItems",
+                  "dynamodb:BatchWriteItem"
+                ],
+                "Resource": [
+                  {
+                    "Fn::GetAtt": [
+                      "NailBookingTable",
+                      "Arn"
+                    ]
+                  },
+                  {
+                    "Fn::Sub": "${NailBookingTable.Arn}/index/*"
+                  }
+                ]
+              },
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "ses:SendEmail",
+                  "ses:SendRawEmail"
+                ],
+                "Resource": "*"
+              },
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "s3:GetObject",
+                  "s3:ListBucket"
+                ],
+                "Resource": [
+                  {
+                    "Fn::GetAtt": [
+                      "MediaBucket",
+                      "Arn"
+                    ]
+                  },
+                  {
+                    "Fn::Sub": "${MediaBucket.Arn}/*"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "httpApi": {
+          "cors": true,
+          "authorizers": {
+            "jwtAuthorizer": {
+              "type": "request",
+              "functionName": "authorizer",
+              "enableSimpleResponses": true,
+              "identitySource": "$request.header.Authorization"
+            }
+          }
+        }
+      },
+      "custom": {
+        "tableName": "NailBooking-stage",
+        "mediaBucket": "nail-booking-media-277707135514-stage",
+        "serverless-offline": {
+          "httpPort": 4000,
+          "noPrependStageInUrl": true
+        },
+        "esbuild": {
+          "bundle": true,
+          "minify": false,
+          "sourcemap": true,
+          "target": "node20",
+          "platform": "node",
+          "concurrency": 10
+        }
+      },
+      "functions": {
+        "authorizer": {
+          "handler": "src/handlers/authorizer.handler"
+        },
+        "register": {
+          "handler": "src/handlers/register.handler",
+          "events": [
+            {
+              "httpApi": {
+                "path": "/users",
+                "method": "POST"
+              }
+            }
+          ]
+        },
+        "login": {
+          "handler": "src/handlers/login.handler",
+          "events": [
+            {
+              "httpApi": {
+                "path": "/login",
+                "method": "POST"
+              }
+            }
+          ]
+        },
+        "adminLogin": {
+          "handler": "src/handlers/adminLogin.handler",
+          "events": [
+            {
+              "httpApi": {
+                "path": "/admin/login",
+                "method": "POST"
+              }
+            }
+          ]
+        },
+        "getSlots": {
+          "handler": "src/handlers/getSlots.handler",
+          "events": [
+            {
+              "httpApi": {
+                "path": "/available-slots",
+                "method": "GET",
+                "authorizer": {
+                  "name": "jwtAuthorizer"
+                }
+              }
+            }
+          ]
+        },
+        "createBooking": {
+          "handler": "src/handlers/createBooking.handler",
+          "events": [
+            {
+              "httpApi": {
+                "path": "/booking",
+                "method": "POST",
+                "authorizer": {
+                  "name": "jwtAuthorizer"
+                }
+              }
+            }
+          ]
+        },
+        "getBookingsByDate": {
+          "handler": "src/handlers/getBookingsByDate.handler",
+          "events": [
+            {
+              "httpApi": {
+                "path": "/admin/bookings",
+                "method": "GET",
+                "authorizer": {
+                  "name": "jwtAuthorizer"
+                }
+              }
+            }
+          ]
+        },
+        "getMedia": {
+          "handler": "src/handlers/getMedia.handler",
+          "events": [
+            {
+              "httpApi": {
+                "path": "/media",
+                "method": "GET"
+              }
+            }
+          ]
+        },
+        "getUsers": {
+          "handler": "src/handlers/getUsers.handler",
+          "events": [
+            {
+              "httpApi": {
+                "path": "/users",
+                "method": "GET",
+                "authorizer": {
+                  "name": "jwtAuthorizer"
+                }
+              }
+            }
+          ]
+        },
+        "setUserRole": {
+          "handler": "src/handlers/setUserRole.handler",
+          "events": [
+            {
+              "httpApi": {
+                "path": "/admin/users/{userId}/role",
+                "method": "PATCH",
+                "authorizer": {
+                  "name": "jwtAuthorizer"
+                }
+              }
+            }
+          ]
+        },
+        "reminder": {
+          "handler": "src/handlers/reminder.handler",
+          "events": [
+            {
+              "schedule": "cron(0 9 * * ? *)"
+            }
+          ]
+        }
+      },
+      "resources": {
+        "Resources": {
+          "NailBookingTable": {
+            "Type": "AWS::DynamoDB::Table",
+            "Properties": {
+              "TableName": "NailBooking-stage",
+              "BillingMode": "PAY_PER_REQUEST",
+              "AttributeDefinitions": [
+                {
+                  "AttributeName": "PK",
+                  "AttributeType": "S"
+                },
+                {
+                  "AttributeName": "SK",
+                  "AttributeType": "S"
+                },
+                {
+                  "AttributeName": "email",
+                  "AttributeType": "S"
+                },
+                {
+                  "AttributeName": "bookingDate",
+                  "AttributeType": "S"
+                },
+                {
+                  "AttributeName": "bookingTimeSlot",
+                  "AttributeType": "S"
+                }
+              ],
+              "KeySchema": [
+                {
+                  "AttributeName": "PK",
+                  "KeyType": "HASH"
+                },
+                {
+                  "AttributeName": "SK",
+                  "KeyType": "RANGE"
+                }
+              ],
+              "GlobalSecondaryIndexes": [
+                {
+                  "IndexName": "EmailIndex",
+                  "KeySchema": [
+                    {
+                      "AttributeName": "email",
+                      "KeyType": "HASH"
+                    }
+                  ],
+                  "Projection": {
+                    "ProjectionType": "ALL"
+                  }
+                },
+                {
+                  "IndexName": "BookingByDate",
+                  "KeySchema": [
+                    {
+                      "AttributeName": "bookingDate",
+                      "KeyType": "HASH"
+                    },
+                    {
+                      "AttributeName": "bookingTimeSlot",
+                      "KeyType": "RANGE"
+                    }
+                  ],
+                  "Projection": {
+                    "ProjectionType": "ALL"
+                  }
+                }
+              ]
+            }
+          },
+          "MediaBucket": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketName": "nail-booking-media-277707135514-stage",
+              "CorsConfiguration": {
+                "CorsRules": [
+                  {
+                    "AllowedOrigins": [
+                      "*"
+                    ],
+                    "AllowedMethods": [
+                      "GET",
+                      "HEAD"
+                    ],
+                    "AllowedHeaders": [
+                      "*"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "plugins": [
+        "serverless-esbuild",
+        "serverless-offline"
+      ]
+    },
+    "provider": {
+      "name": "aws",
+      "runtime": "nodejs20.x",
+      "region": "eu-west-1",
+      "stage": "stage",
+      "environment": {
+        "APP_STAGE": "stage",
+        "TABLE_NAME": "NailBooking-stage",
+        "JWT_SECRET": "<REDACTED>",
+        "SES_FROM_EMAIL": "noreply@podinario.rs",
+        "MEDIA_BUCKET": "nail-booking-media-277707135514-stage",
+        "ENABLE_SMS": "false",
+        "TWILIO_ACCOUNT_SID": "",
+        "TWILIO_AUTH_TOKEN": "<REDACTED>",
+        "TWILIO_FROM_PHONE": "",
+        "AWS_NODEJS_CONNECTION_REUSE_ENABLED": "1"
+      },
+      "iam": {
+        "role": {
+          "statements": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "dynamodb:PutItem",
+                "dynamodb:GetItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:Query",
+                "dynamodb:Scan",
+                "dynamodb:TransactWriteItems",
+                "dynamodb:BatchWriteItem"
+              ],
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "NailBookingTable",
+                    "Arn"
+                  ]
+                },
+                {
+                  "Fn::Sub": "${NailBookingTable.Arn}/index/*"
+                }
+              ]
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "ses:SendEmail",
+                "ses:SendRawEmail"
+              ],
+              "Resource": "*"
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObject",
+                "s3:ListBucket"
+              ],
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "MediaBucket",
+                    "Arn"
+                  ]
+                },
+                {
+                  "Fn::Sub": "${MediaBucket.Arn}/*"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "httpApi": {
+        "cors": true,
+        "authorizers": {
+          "jwtAuthorizer": {
+            "type": "request",
+            "functionName": "authorizer",
+            "enableSimpleResponses": true,
+            "identitySource": "$request.header.Authorization"
+          }
+        }
+      }
+    },
+    "dashboard": {
+      "isEnabledForService": false,
+      "requiredAuthentication": false,
+      "orgFeaturesInUse": null,
+      "orgObservabilityIntegrations": null,
+      "serviceAppId": null,
+      "serviceProvider": null,
+      "instanceParameters": null
+    },
+    "error": {
+      "message": "The Serverless version (4.36.1) does not satisfy the \"frameworkVersion\" (3) in serverless",
+      "stack": "ServerlessError2: The Serverless version (4.36.1) does not satisfy the \"frameworkVersion\" (3) in serverless\n    at Service.loadServiceFileParam (file:///C:/Users/MilosMijajlovic/.serverless/releases/4.36.1/package/dist/sf-core.js:2352:9062)\n    at Service.load (file:///C:/Users/MilosMijajlovic/.serverless/releases/4.36.1/package/dist/sf-core.js:2352:6701)\n    at Serverless.init (file:///C:/Users/MilosMijajlovic/.serverless/releases/4.36.1/package/dist/sf-core.js:2403:9835)\n    at runFramework (file:///C:/Users/MilosMijajlovic/.serverless/releases/4.36.1/package/dist/sf-core.js:2430:860)\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async TraditionalRunner.run (file:///C:/Users/MilosMijajlovic/.serverless/releases/4.36.1/package/dist/sf-core.js:2426:26806)\n    at async route (file:///C:/Users/MilosMijajlovic/.serverless/releases/4.36.1/package/dist/sf-core.js:2597:2848)\n    at async Object.run (file:///C:/Users/MilosMijajlovic/.serverless/releases/4.36.1/package/dist/sf-core.js:2598:3886)\n    at async run2 (file:///C:/Users/MilosMijajlovic/.serverless/releases/4.36.1/package/dist/sf-core.js:2598:5040)",
+      "code": "FRAMEWORK_VERSION_MISMATCH"
+    },
+    "serviceRawFile": "# yaml-language-server: $schema=https://json-schema.org/draft/2020-12/schema\r\nservice: nail-booking-backend\r\nframeworkVersion: '3'\r\nuseDotenv: true\r\n\r\nprovider:\r\n  name: aws\r\n  runtime: nodejs20.x\r\n  region: ${opt:region, 'eu-west-1'}\r\n  stage: ${opt:stage, 'stage'}\r\n  environment:\r\n    APP_STAGE: ${sls:stage}\r\n    TABLE_NAME: ${self:custom.tableName}\r\n    JWT_SECRET: ${env:JWT_SECRET}\r\n    SES_FROM_EMAIL: ${env:SES_FROM_EMAIL}\r\n    MEDIA_BUCKET: ${self:custom.mediaBucket}\r\n    ENABLE_SMS: ${env:ENABLE_SMS, 'false'}\r\n    TWILIO_ACCOUNT_SID: ${env:TWILIO_ACCOUNT_SID, ''}\r\n    TWILIO_AUTH_TOKEN: ${env:TWILIO_AUTH_TOKEN, ''}\r\n    TWILIO_FROM_PHONE: ${env:TWILIO_FROM_PHONE, ''}\r\n    AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1'\r\n  iam:\r\n    role:\r\n      statements:\r\n        - Effect: Allow\r\n          Action:\r\n            - dynamodb:PutItem\r\n            - dynamodb:GetItem\r\n            - dynamodb:UpdateItem\r\n            - dynamodb:Query\r\n            - dynamodb:Scan\r\n            - dynamodb:TransactWriteItems\r\n            - dynamodb:BatchWriteItem\r\n          Resource:\r\n            - Fn::GetAtt: [NailBookingTable, Arn]\r\n            - Fn::Sub: '${NailBookingTable.Arn}/index/*'\r\n        - Effect: Allow\r\n          Action:\r\n            - ses:SendEmail\r\n            - ses:SendRawEmail\r\n          Resource: '*'\r\n        - Effect: Allow\r\n          Action:\r\n            - s3:GetObject\r\n            - s3:ListBucket\r\n          Resource:\r\n            - Fn::GetAtt: [MediaBucket, Arn]\r\n            - Fn::Sub: '${MediaBucket.Arn}/*'\r\n  httpApi:\r\n    cors: true\r\n    authorizers:\r\n      jwtAuthorizer:\r\n        type: request\r\n        functionName: authorizer\r\n        enableSimpleResponses: true\r\n        identitySource: $request.header.Authorization\r\n\r\ncustom:\r\n  tableName: NailBooking-${sls:stage}\r\n  mediaBucket: nail-booking-media-${aws:accountId}-${sls:stage}\r\n  serverless-offline:\r\n    httpPort: 4000\r\n    noPrependStageInUrl: true\r\n  esbuild:\r\n    bundle: true\r\n    minify: false\r\n    sourcemap: true\r\n    target: node20\r\n    platform: node\r\n    concurrency: 10\r\n\r\nfunctions:\r\n  authorizer:\r\n    handler: src/handlers/authorizer.handler\r\n\r\n  register:\r\n    handler: src/handlers/register.handler\r\n    events:\r\n      - httpApi:\r\n          path: /users\r\n          method: POST\r\n\r\n  login:\r\n    handler: src/handlers/login.handler\r\n    events:\r\n      - httpApi:\r\n          path: /login\r\n          method: POST\r\n\r\n  adminLogin:\r\n    handler: src/handlers/adminLogin.handler\r\n    events:\r\n      - httpApi:\r\n          path: /admin/login\r\n          method: POST\r\n\r\n  getSlots:\r\n    handler: src/handlers/getSlots.handler\r\n    events:\r\n      - httpApi:\r\n          path: /available-slots\r\n          method: GET\r\n          authorizer:\r\n            name: jwtAuthorizer\r\n\r\n  createBooking:\r\n    handler: src/handlers/createBooking.handler\r\n    events:\r\n      - httpApi:\r\n          path: /booking\r\n          method: POST\r\n          authorizer:\r\n            name: jwtAuthorizer\r\n\r\n  getBookingsByDate:\r\n    handler: src/handlers/getBookingsByDate.handler\r\n    events:\r\n      - httpApi:\r\n          path: /admin/bookings\r\n          method: GET\r\n          authorizer:\r\n            name: jwtAuthorizer\r\n\r\n  getMedia:\r\n    handler: src/handlers/getMedia.handler\r\n    events:\r\n      - httpApi:\r\n          path: /media\r\n          method: GET\r\n\r\n  getUsers:\r\n    handler: src/handlers/getUsers.handler\r\n    events:\r\n      - httpApi:\r\n          path: /users\r\n          method: GET\r\n          authorizer:\r\n            name: jwtAuthorizer\r\n\r\n  setUserRole:\r\n    handler: src/handlers/setUserRole.handler\r\n    events:\r\n      - httpApi:\r\n          path: /admin/users/{userId}/role\r\n          method: PATCH\r\n          authorizer:\r\n            name: jwtAuthorizer\r\n\r\n  reminder:\r\n    handler: src/handlers/reminder.handler\r\n    events:\r\n      - schedule: cron(0 9 * * ? *)\r\n\r\nresources:\r\n  Resources:\r\n    NailBookingTable:\r\n      Type: AWS::DynamoDB::Table\r\n      Properties:\r\n        TableName: ${self:custom.tableName}\r\n        BillingMode: PAY_PER_REQUEST\r\n        AttributeDefinitions:\r\n          - AttributeName: PK\r\n            AttributeType: S\r\n          - AttributeName: SK\r\n            AttributeType: S\r\n          - AttributeName: email\r\n            AttributeType: S\r\n          - AttributeName: bookingDate\r\n            AttributeType: S\r\n          - AttributeName: bookingTimeSlot\r\n            AttributeType: S\r\n        KeySchema:\r\n          - AttributeName: PK\r\n            KeyType: HASH\r\n          - AttributeName: SK\r\n            KeyType: RANGE\r\n        GlobalSecondaryIndexes:\r\n          - IndexName: EmailIndex\r\n            KeySchema:\r\n              - AttributeName: email\r\n                KeyType: HASH\r\n            Projection:\r\n              ProjectionType: ALL\r\n          - IndexName: BookingByDate\r\n            KeySchema:\r\n              - AttributeName: bookingDate\r\n                KeyType: HASH\r\n              - AttributeName: bookingTimeSlot\r\n                KeyType: RANGE\r\n            Projection:\r\n              ProjectionType: ALL\r\n\r\n    MediaBucket:\r\n      Type: AWS::S3::Bucket\r\n      Properties:\r\n        BucketName: ${self:custom.mediaBucket}\r\n        CorsConfiguration:\r\n          CorsRules:\r\n            - AllowedOrigins:\r\n                - '*'\r\n              AllowedMethods:\r\n                - GET\r\n                - HEAD\r\n              AllowedHeaders:\r\n                - '*'\r\n\r\nplugins:\r\n  - serverless-esbuild\r\n  - serverless-offline\r\n",
+    "command": [
+      "offline"
+    ],
+    "options": {},
+    "orgId": "55adab6b-9856-4195-9abb-bbf9c5ff1b87",
+    "orgName": "multi92sb",
+    "userId": "XK354nN1dYPhGTN7wX",
+    "userName": "multi92sb",
+    "serviceProviderAwsAccountId": "277707135514",
+    "serviceProviderAwsCfStackName": "nail-booking-backend-stage",
+    "serviceProviderAwsCfStackId": "arn:aws:cloudformation:eu-west-1:277707135514:stack/nail-booking-backend-stage/1b771cb0-380c-11f1-aced-0ae07b909c55",
+    "serviceProviderAwsCfStackCreated": "2026-04-14T14:13:27.727Z",
+    "serviceProviderAwsCfStackUpdated": "2026-04-21T11:55:54.164Z",
+    "serviceProviderAwsCfStackStatus": "UPDATE_COMPLETE",
+    "serviceProviderAwsCfStackOutputs": [
+      {
+        "OutputKey": "GetUsersLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:eu-west-1:277707135514:function:nail-booking-backend-stage-getUsers:3",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-nail-booking-backend-stage-GetUsersLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "RegisterLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:eu-west-1:277707135514:function:nail-booking-backend-stage-register:3",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-nail-booking-backend-stage-RegisterLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "CreateBookingLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:eu-west-1:277707135514:function:nail-booking-backend-stage-createBooking:3",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-nail-booking-backend-stage-CreateBookingLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "HttpApiId",
+        "OutputValue": "4c5wko73hk",
+        "Description": "Id of the HTTP API",
+        "ExportName": "sls-nail-booking-backend-stage-HttpApiId"
+      },
+      {
+        "OutputKey": "GetBookingsByDateLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:eu-west-1:277707135514:function:nail-booking-backend-stage-getBookingsByDate:3",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-nail-booking-backend-stage-GetBookingsByDateLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "ServerlessDeploymentBucketName",
+        "OutputValue": "nail-booking-backend-stag-serverlessdeploymentbuck-v4xzkbbx2of6",
+        "ExportName": "sls-nail-booking-backend-stage-ServerlessDeploymentBucketName"
+      },
+      {
+        "OutputKey": "HttpApiUrl",
+        "OutputValue": "https://4c5wko73hk.execute-api.eu-west-1.amazonaws.com",
+        "Description": "URL of the HTTP API",
+        "ExportName": "sls-nail-booking-backend-stage-HttpApiUrl"
+      },
+      {
+        "OutputKey": "AuthorizerLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:eu-west-1:277707135514:function:nail-booking-backend-stage-authorizer:3",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-nail-booking-backend-stage-AuthorizerLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "GetMediaLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:eu-west-1:277707135514:function:nail-booking-backend-stage-getMedia:3",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-nail-booking-backend-stage-GetMediaLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "AdminLoginLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:eu-west-1:277707135514:function:nail-booking-backend-stage-adminLogin:3",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-nail-booking-backend-stage-AdminLoginLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "GetSlotsLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:eu-west-1:277707135514:function:nail-booking-backend-stage-getSlots:3",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-nail-booking-backend-stage-GetSlotsLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "ReminderLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:eu-west-1:277707135514:function:nail-booking-backend-stage-reminder:3",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-nail-booking-backend-stage-ReminderLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "SetUserRoleLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:eu-west-1:277707135514:function:nail-booking-backend-stage-setUserRole:3",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-nail-booking-backend-stage-SetUserRoleLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "LoginLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:eu-west-1:277707135514:function:nail-booking-backend-stage-login:3",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-nail-booking-backend-stage-LoginLambdaFunctionQualifiedArn"
+      }
+    ]
+  }
+}

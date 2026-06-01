@@ -9,6 +9,8 @@ node_modules/
 esbuild/
 .esbuild/
 
+opencode-config/
+
 backend/dynamodb-local/
 backend/.dynamodb/
 backend/dynamodb_local_latest.zip

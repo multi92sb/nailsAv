@@ -37,7 +37,8 @@ function getWorkingDates(count: number): string[] {
  * Create admin if not exists
  */
 async function seedAdmin() {
-  const email = 'admin@nails.com';
+  const email = process.env.ADMIN_EMAIL ?? 'admin@nails.com';
+  const password = process.env.ADMIN_PASSWORD ?? 'admin123';
 
   const existing = await docClient.send(
     new GetCommand({
@@ -54,7 +55,7 @@ async function seedAdmin() {
     return;
   }
 
-  const passwordHash = await bcrypt.hash('admin123', 10);
+  const passwordHash = await bcrypt.hash(password, 10);
 
   await docClient.send(
     new PutCommand({
@@ -64,7 +65,7 @@ async function seedAdmin() {
         SK: 'PROFILE',
         userId: 'admin',
         email,
-        password: passwordHash, 
+        password: passwordHash,
         role: 'ADMIN',
         firstName: 'Admin',
         lastName: 'User',
