@@ -4,7 +4,7 @@
 
 build/
 dist/
-serverless/
+.serverless/
 node_modules/
 esbuild/
 .esbuild/
