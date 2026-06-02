@@ -83,6 +83,55 @@ export const sendReminderEmail = async (
   });
 };
 
+export const sendCancellationEmail = async (
+  toEmail: string,
+  booking: BookingDetails,
+): Promise<void> => {
+  await sendEmailWithRetry({
+    Source: FROM,
+    Destination: { ToAddresses: [toEmail] },
+    Message: {
+      Subject: { Data: 'Booking Cancelled – NailsAv' },
+      Body: {
+        Html: {
+          Data: `
+            <h2>Your appointment has been cancelled 💅</h2>
+            <p><strong>Date:</strong> ${booking.date}</p>
+            <p><strong>Time:</strong> ${booking.time}</p>
+            <p><strong>Booking ID:</strong> ${booking.bookingId}</p>
+            <p>If you did not request this or have questions, please contact us.</p>
+          `,
+        },
+      },
+    },
+  });
+};
+
+export const sendRescheduleEmail = async (
+  toEmail: string,
+  booking: BookingDetails,
+): Promise<void> => {
+  await sendEmailWithRetry({
+    Source: FROM,
+    Destination: { ToAddresses: [toEmail] },
+    Message: {
+      Subject: { Data: 'Booking Rescheduled – NailsAv' },
+      Body: {
+        Html: {
+          Data: `
+            <h2>Your appointment has been rescheduled! 💅</h2>
+            <p><strong>New Date:</strong> ${booking.date}</p>
+            <p><strong>New Time:</strong> ${booking.time}</p>
+            <p><strong>Booking ID:</strong> ${booking.bookingId}</p>
+            <p>We look forward to seeing you at your new time!</p>
+          `,
+        },
+      },
+    },
+  });
+};
+
+
 async function sendSmsNotification(booking: BookingDetails): Promise<void> {
   const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_PHONE } = process.env;
   if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_FROM_PHONE) return;

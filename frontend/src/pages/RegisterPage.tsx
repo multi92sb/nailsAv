@@ -3,10 +3,13 @@ import type { FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../api/apiClient';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../context/LanguageContext';
+import LanguageSelector from '../components/LanguageSelector';
 
 export default function RegisterPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
@@ -37,9 +40,10 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-rose-50 flex items-center justify-center p-4">
+      <LanguageSelector floating />
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
-        <h1 className="text-2xl font-bold text-rose-700 mb-1 text-center">Create Account</h1>
-        <p className="text-gray-400 text-sm text-center mb-6">Book your first nail appointment</p>
+        <h1 className="text-2xl font-bold text-rose-700 mb-1 text-center">{t('signUpTitle')}</h1>
+        <p className="text-gray-400 text-sm text-center mb-6">{t('signUpSubtitle')}</p>
 
         {error && (
           <p className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg px-3 py-2 mb-4 text-center">
@@ -51,7 +55,7 @@ export default function RegisterPage() {
           <div className="grid grid-cols-2 gap-3">
             <input
               className="input"
-              placeholder="First name"
+              placeholder={t('firstNamePlaceholder')}
               value={form.firstName}
               onChange={set('firstName')}
               required
@@ -59,7 +63,7 @@ export default function RegisterPage() {
             />
             <input
               className="input"
-              placeholder="Last name"
+              placeholder={t('lastNamePlaceholder')}
               value={form.lastName}
               onChange={set('lastName')}
               required
@@ -68,7 +72,7 @@ export default function RegisterPage() {
           <input
             className="input"
             type="email"
-            placeholder="Email address"
+            placeholder={t('emailPlaceholder')}
             value={form.email}
             onChange={set('email')}
             required
@@ -76,7 +80,7 @@ export default function RegisterPage() {
           <input
             className="input"
             type="tel"
-            placeholder="Phone number"
+            placeholder={t('phonePlaceholder')}
             value={form.phone}
             onChange={set('phone')}
             required
@@ -84,7 +88,7 @@ export default function RegisterPage() {
           <input
             className="input"
             type="password"
-            placeholder="Password (min. 8 characters)"
+            placeholder={t('passwordPlaceholder') + ' (min. 8)'}
             value={form.password}
             onChange={set('password')}
             required
@@ -95,14 +99,14 @@ export default function RegisterPage() {
             disabled={loading}
             className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-2.5 rounded-lg transition disabled:opacity-50"
           >
-            {loading ? 'Creating account…' : 'Create Account'}
+            {loading ? t('signingUpButton') : t('signUpButton')}
           </button>
         </form>
 
         <p className="text-center text-sm text-gray-500 mt-5">
-          Already have an account?{' '}
+          {t('alreadyHaveAccount')}{' '}
           <Link to="/login" className="text-rose-600 font-medium hover:underline">
-            Sign in
+            {t('loginLink')}
           </Link>
         </p>
       </div>

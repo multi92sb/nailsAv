@@ -2,10 +2,13 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api/apiClient';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../context/LanguageContext';
+import LanguageSelector from '../components/LanguageSelector';
 
 export default function ProfilePage() {
   const { user, logout, login } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [form, setForm] = useState({
     firstName: '',
@@ -53,7 +56,7 @@ export default function ProfilePage() {
     if (form.phone.trim()) body.phone = form.phone.trim();
 
     if (Object.keys(body).length === 0) {
-      setError('No changes to save');
+      setError(t('noChangesToSave'));
       setSaving(false);
       return;
     }
@@ -78,28 +81,29 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-rose-50">
       <header className="bg-white shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
-          <span className="text-xl font-bold text-rose-700">💅 NailsAv</span>
+          <span className="text-xl font-bold text-rose-700">{t('appLogo')}</span>
           <nav className="flex items-center gap-5 text-sm">
             <Link to="/home" className="text-gray-600 hover:text-rose-600 transition">
-              Home
+              {t('navHome')}
             </Link>
             <Link to="/my-bookings" className="text-gray-600 hover:text-rose-600 transition">
-              My Bookings
+              {t('navMyBookings')}
             </Link>
+            <LanguageSelector />
             <button onClick={handleLogout} className="text-gray-500 hover:text-rose-600 transition">
-              Logout
+              {t('navLogout')}
             </button>
           </nav>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-10">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">Profile</h1>
+        <h1 className="text-2xl font-bold text-gray-800 mb-6">{t('profileTitle')}</h1>
 
         {loading && (
           <div className="text-center py-12">
             <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-rose-200 border-t-rose-600" />
-            <p className="mt-3 text-sm text-gray-500">Loading profile...</p>
+            <p className="mt-3 text-sm text-gray-500">{t('loading')}</p>
           </div>
         )}
 
@@ -113,7 +117,7 @@ export default function ProfilePage() {
 
             {success && (
               <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg text-sm mb-4">
-                Profile updated successfully.
+                {t('successUpdate')}
               </div>
             )}
 
@@ -121,7 +125,7 @@ export default function ProfilePage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    First name
+                    {t('firstNamePlaceholder')}
                   </label>
                   <input
                     className="input"
@@ -132,7 +136,7 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Last name
+                    {t('lastNamePlaceholder')}
                   </label>
                   <input
                     className="input"
@@ -145,7 +149,7 @@ export default function ProfilePage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
+                  {t('emailLabel')}
                 </label>
                 <input
                   className="input bg-gray-50 text-gray-500 cursor-not-allowed"
@@ -153,12 +157,12 @@ export default function ProfilePage() {
                   disabled
                   readOnly
                 />
-                <p className="text-xs text-gray-400 mt-1">Email cannot be changed</p>
+                <p className="text-xs text-gray-400 mt-1">{t('emailImmutableTip')}</p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone
+                  {t('phonePlaceholder')}
                 </label>
                 <input
                   className="input"
@@ -174,7 +178,7 @@ export default function ProfilePage() {
                 disabled={saving}
                 className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-2.5 rounded-lg transition disabled:opacity-50"
               >
-                {saving ? 'Saving…' : 'Save Changes'}
+                {saving ? t('savingChanges') : t('saveChangesButton')}
               </button>
             </form>
           </div>

@@ -129,6 +129,33 @@ export const api = {
 
   getMedia: () => request<{ media: { key: string; url: string }[] }>('/media'),
 
+  adminGenerateSlots: (body: {
+    startDate: string;
+    endDate: string;
+    times: string[];
+    closedDays?: number[];
+  }) => request<{ message: string; count: number }>('/admin/slots', { method: 'POST', body, auth: true }),
+
+  adminDeleteSlot: (params: { date: string; time: string; slotId: string }) =>
+    request<{ message: string }>(
+      `/admin/slots?date=${params.date}&time=${params.time}&slotId=${params.slotId}`,
+      { method: 'DELETE', auth: true },
+    ),
+
+  adminModifyBooking: (
+    bookingId: string,
+    body: {
+      userId: string;
+      status?: string;
+      newSlot?: { date: string; time: string; slotId: string };
+    },
+  ) =>
+    request<{ bookingId: string; status: string }>(`/admin/bookings/${bookingId}`, {
+      method: 'PATCH',
+      body,
+      auth: true,
+    }),
+
   getMyBookings: () =>
     request<{ bookings: MyBooking[] }>('/my-bookings', { auth: true }),
 

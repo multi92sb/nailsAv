@@ -10,7 +10,7 @@ const getSecret = (): string => {
 export const signToken = (
   payload: AuthorizerContext,
   options?: { expiresIn?: string | number },
-): string => jwt.sign(payload, getSecret(), { expiresIn: options?.expiresIn ?? '7d' });
+): string => jwt.sign(payload, getSecret(), { expiresIn: (options?.expiresIn ?? '7d') as any });
 
 export const verifyToken = (token: string): AuthorizerContext =>
   jwt.verify(token, getSecret()) as AuthorizerContext;

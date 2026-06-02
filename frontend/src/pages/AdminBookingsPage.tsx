@@ -3,8 +3,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api/apiClient';
 import type { AdminBooking, Slot } from '../api/apiClient';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../context/LanguageContext';
+import LanguageSelector from '../components/LanguageSelector';
 
 const WEEK_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+const WEEKDAY_LABELS: Record<string, Record<string, string>> = {
+  en: { Mon: 'Mon', Tue: 'Tue', Wed: 'Wed', Thu: 'Thu', Fri: 'Fri', Sat: 'Sat', Sun: 'Sun' },
+  sr: { Mon: 'Pon', Tue: 'Uto', Wed: 'Sre', Thu: 'Čet', Fri: 'Pet', Sat: 'Sub', Sun: 'Ned' },
+};
 
 function todayStr(): string {
   const d = new Date();
@@ -18,8 +25,8 @@ function toDateStr(year: number, month: number, day: number): string {
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-function monthLabel(monthCursor: Date): string {
-  return monthCursor.toLocaleString(undefined, { month: 'long', year: 'numeric' });
+function monthLabel(monthCursor: Date, language: string): string {
+  return monthCursor.toLocaleString(language === 'sr' ? 'sr-RS' : 'en-US', { month: 'long', year: 'numeric' });
 }
 
 function buildCalendarCells(monthCursor: Date): Array<{ date: string | null; day: number | null }> {
@@ -47,6 +54,7 @@ function buildCalendarCells(monthCursor: Date): Array<{ date: string | null; day
 export default function AdminBookingsPage() {
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const { t, language } = useTranslation();
 
   const [date, setDate] = useState(todayStr());
   const [monthCursor, setMonthCursor] = useState(() => {
@@ -61,6 +69,22 @@ export default function AdminBookingsPage() {
   const [bookings, setBookings] = useState<AdminBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Reschedule state
+  const [reschedulingBooking, setReschedulingBooking] = useState<AdminBooking | null>(null);
+  const [rescheduleDate, setRescheduleDate] = useState(todayStr());
+  const [availableSlots, setAvailableSlots] = useState<Slot[]>([]);
+  const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [rescheduling, setRescheduling] = useState(false);
+  const [rescheduleError, setRescheduleError] = useState<string | null>(null);
+
+  const statusLabels: Record<string, string> = {
+    CONFIRMED: t('statusConfirmed'),
+    CANCELLED: t('statusCancelled'),
+    COMPLETED: t('statusCompleted'),
+    NO_SHOW: t('statusNoShow'),
+  };
 
   const calendarCells = useMemo(() => buildCalendarCells(monthCursor), [monthCursor]);
 
@@ -82,6 +106,64 @@ export default function AdminBookingsPage() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date]);
+
+  // Load slots for rescheduling
+  useEffect(() => {
+    if (!reschedulingBooking) return;
+    setLoadingSlots(true);
+    setRescheduleError(null);
+    setSelectedSlot(null);
+    api
+      .getSlots(rescheduleDate)
+      .then((res) => {
+        setAvailableSlots(res.slots.filter((s) => s.isAvailable));
+      })
+      .catch(() => setRescheduleError('Failed to load slots.'))
+      .finally(() => setLoadingSlots(false));
+  }, [rescheduleDate, reschedulingBooking]);
+
+  const handleStatusChange = async (booking: AdminBooking, newStatus: string) => {
+    const statusLabel = statusLabels[newStatus] || newStatus;
+    if (!window.confirm(t('confirmStatusChange', { status: statusLabel }))) {
+      return;
+    }
+    try {
+      await api.adminModifyBooking(booking.bookingId, {
+        userId: booking.userId,
+        status: newStatus,
+      });
+      // Invalidate cache and reload
+      setSlotCache({});
+      setBookingCache({});
+      load();
+    } catch (err: any) {
+      alert(err instanceof Error ? err.message : 'Action failed');
+    }
+  };
+
+  const handleRescheduleSubmit = async () => {
+    if (!reschedulingBooking || !selectedSlot) return;
+    setRescheduling(true);
+    setRescheduleError(null);
+    try {
+      await api.adminModifyBooking(reschedulingBooking.bookingId, {
+        userId: reschedulingBooking.userId,
+        newSlot: {
+          date: selectedSlot.date,
+          time: selectedSlot.time,
+          slotId: selectedSlot.slotId,
+        },
+      });
+      setReschedulingBooking(null);
+      setSlotCache({});
+      setBookingCache({});
+      load();
+    } catch (err: any) {
+      setRescheduleError(err instanceof Error ? err.message : 'Reschedule failed');
+    } finally {
+      setRescheduling(false);
+    }
+  };
 
   const sorted = useMemo(() => {
     return [...bookings].sort((a, b) => a.time.localeCompare(b.time));
@@ -154,21 +236,25 @@ export default function AdminBookingsPage() {
       <header className="bg-white shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <span className="text-xl font-bold text-rose-700">Admin Panel</span>
-            <span className="text-sm text-gray-500">Bookings</span>
+            <span className="text-xl font-bold text-rose-700">{t('adminPanel')}</span>
+            <span className="text-sm text-gray-500">{t('navBookings')}</span>
           </div>
           <nav className="flex items-center gap-5 text-sm">
             <Link to="/admin/users" className="text-gray-600 hover:text-rose-600 transition">
-              Users
+              {t('navUsers')}
             </Link>
             <Link to="/admin/bookings" className="text-rose-700 font-semibold">
-              Bookings
+              {t('navBookings')}
+            </Link>
+            <Link to="/admin/slots" className="text-gray-600 hover:text-rose-600 transition">
+              {t('navSlots')}
             </Link>
             <Link to="/home" className="text-gray-600 hover:text-rose-600 transition">
-              Home
+              {t('navHome')}
             </Link>
+            <LanguageSelector />
             <button onClick={handleLogout} className="text-gray-500 hover:text-rose-600 transition">
-              Logout
+              {t('navLogout')}
             </button>
           </nav>
         </div>
@@ -177,9 +263,9 @@ export default function AdminBookingsPage() {
       <main className="max-w-6xl mx-auto px-4 py-10">
         <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">Bookings by date</h1>
+            <h1 className="text-2xl font-bold text-gray-800">{t('bookingsByDate')}</h1>
             <p className="text-sm text-gray-500 mt-1">
-              On desktop, hover a day to preview slots. On mobile, tap a day to see full slot details below.
+              {t('bookingsHoverTip')}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -193,7 +279,7 @@ export default function AdminBookingsPage() {
               onClick={load}
               className="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium"
             >
-              Refresh
+              {t('refresh')}
             </button>
           </div>
         </div>
@@ -207,9 +293,9 @@ export default function AdminBookingsPage() {
               }
               className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm text-gray-700 hover:bg-gray-50"
             >
-              Prev
+              {t('prev')}
             </button>
-            <h2 className="text-lg font-semibold text-gray-800 capitalize">{monthLabel(monthCursor)}</h2>
+            <h2 className="text-lg font-semibold text-gray-800 capitalize">{monthLabel(monthCursor, language)}</h2>
             <button
               type="button"
               onClick={() =>
@@ -217,7 +303,7 @@ export default function AdminBookingsPage() {
               }
               className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm text-gray-700 hover:bg-gray-50"
             >
-              Next
+              {t('next')}
             </button>
           </div>
 
@@ -226,7 +312,7 @@ export default function AdminBookingsPage() {
               <div className="grid grid-cols-7 gap-2 mb-2">
                 {WEEK_DAYS.map((dayName) => (
                   <div key={dayName} className="text-xs font-semibold text-gray-500 text-center py-1">
-                    {dayName}
+                    {WEEKDAY_LABELS[language]?.[dayName] || WEEKDAY_LABELS.en[dayName] || dayName}
                   </div>
                 ))}
               </div>
@@ -272,17 +358,17 @@ export default function AdminBookingsPage() {
                     <span className="text-sm font-semibold text-gray-800">{cell.day}</span>
                     {isToday && (
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 whitespace-nowrap">
-                        Today
+                        {t('todayLabel')}
                       </span>
                     )}
                   </div>
                   {isClosedDay && (
-                    <div className="mt-2 text-[11px] font-medium text-gray-500">Closed</div>
+                    <div className="mt-2 text-[11px] font-medium text-gray-500">{t('closedLabel')}</div>
                   )}
                   {slots.length > 0 && (
                     <div className="mt-2 text-[11px] leading-4 text-gray-600">
-                      <div className="text-emerald-700">Free {freeCount}</div>
-                      <div className="text-rose-700">Used {usedCount}</div>
+                      <div className="text-emerald-700">{t('slotsFree', { count: freeCount })}</div>
+                      <div className="text-rose-700">{t('slotsUsed', { count: usedCount })}</div>
                     </div>
                   )}
 
@@ -291,18 +377,18 @@ export default function AdminBookingsPage() {
                       <p className="text-xs font-semibold text-gray-800 mb-2">{cellDate}</p>
 
                       {hoverLoadingDate === cellDate && (
-                        <p className="text-xs text-gray-500">Loading slots...</p>
+                        <p className="text-xs text-gray-500">{t('loading')}</p>
                       )}
 
                       {hoverErrorDate === cellDate && (
-                        <p className="text-xs text-red-600">Could not load slots for this date.</p>
+                        <p className="text-xs text-red-600">{t('failedToLoadSlots')}</p>
                       )}
 
                       {hoverLoadingDate !== cellDate &&
                         hoverErrorDate !== cellDate &&
                         slots.length === 0 && (
                           <p className="text-xs text-gray-500">
-                            {isClosedDay ? 'Closed' : 'No slots found for this date.'}
+                            {isClosedDay ? t('closedLabel') : t('noSlotsFound')}
                           </p>
                         )}
 
@@ -328,16 +414,16 @@ export default function AdminBookingsPage() {
                                           slot.isAvailable ? 'text-emerald-700' : 'text-rose-700'
                                         }`}
                                       >
-                                        {slot.isAvailable ? 'Free' : 'Used'}
+                                        {slot.isAvailable ? t('freeBadge') : t('bookedBadge')}
                                       </span>
                                     </div>
 
                                     {!slot.isAvailable && (
                                       <div className="mt-1 text-[11px] text-gray-600">
                                         <div>
-                                          {booking?.email ? `User: ${booking.email}` : 'User: unavailable'}
+                                          {booking?.email ? `${t('detailsUser')} ${booking.email}` : `${t('detailsUser')} unavailable`}
                                         </div>
-                                        {booking?.phone && <div>Phone: {booking.phone}</div>}
+                                        {booking?.phone && <div>{t('detailsPhone')} {booking.phone}</div>}
                                       </div>
                                     )}
                                   </div>
@@ -359,8 +445,8 @@ export default function AdminBookingsPage() {
         <section className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
           <div className="flex items-center justify-between gap-3 mb-3">
             <div>
-              <h2 className="text-lg font-semibold text-gray-800">Selected day details</h2>
-              <p className="text-sm text-gray-500">Tap a date in the calendar to inspect slot availability.</p>
+              <h2 className="text-lg font-semibold text-gray-800">{t('selectedDayDetails')}</h2>
+              <p className="text-sm text-gray-500">{t('tapToInspect')}</p>
             </div>
             <div className="text-sm text-gray-600">
               <span className="font-semibold text-gray-800">{date}</span>
@@ -368,18 +454,18 @@ export default function AdminBookingsPage() {
           </div>
 
           {hoverLoadingDate === date && selectedDateSlots.length === 0 && (
-            <p className="text-sm text-gray-500">Loading slots...</p>
+            <p className="text-sm text-gray-500">{t('loading')}</p>
           )}
 
           {selectedDateIsClosed && selectedDateSlots.length === 0 && (
             <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-              Closed. No working slots are configured for this day.
+              {t('closedDayText')}
             </div>
           )}
 
           {!selectedDateIsClosed && selectedDateSlots.length === 0 && hoverLoadingDate !== date && (
             <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-              No slots found for this date.
+              {t('noSlotsFound')}
             </div>
           )}
 
@@ -399,24 +485,24 @@ export default function AdminBookingsPage() {
                           slot.isAvailable ? 'text-emerald-700' : 'text-rose-700'
                         }`}
                       >
-                        {slot.isAvailable ? 'Free' : 'Used'}
+                        {slot.isAvailable ? t('freeBadge') : t('bookedBadge')}
                       </span>
                     </div>
 
                     {!slot.isAvailable && (
                       <div className="mt-2 text-sm text-gray-600 space-y-1">
                         <div>
-                          <span className="font-medium text-gray-700">User:</span>{' '}
+                          <span className="font-medium text-gray-700">{t('detailsUser')}</span>{' '}
                           {booking?.email ?? 'unavailable'}
                         </div>
                         <div>
-                          <span className="font-medium text-gray-700">Phone:</span>{' '}
+                          <span className="font-medium text-gray-700">{t('detailsPhone')}</span>{' '}
                           {booking?.phone || '—'}
                         </div>
                         {booking?.status && (
                           <div>
-                            <span className="font-medium text-gray-700">Status:</span>{' '}
-                            {booking.status}
+                            <span className="font-medium text-gray-700">{t('detailsStatus')}</span>{' '}
+                            {statusLabels[booking.status] || booking.status}
                           </div>
                         )}
                       </div>
@@ -429,12 +515,12 @@ export default function AdminBookingsPage() {
         </section>
 
         <div className="mb-4 text-sm text-gray-600">
-          Selected date: <span className="font-semibold text-gray-800">{date}</span>
+          {language === 'sr' ? 'Izabrani datum:' : 'Selected date:'} <span className="font-semibold text-gray-800">{date}</span>
           <span className="mx-2">•</span>
-          Bookings: <span className="font-semibold text-gray-800">{selectedDateBookingsCount}</span>
+          {language === 'sr' ? 'Rezervacije:' : 'Bookings:'} <span className="font-semibold text-gray-800">{selectedDateBookingsCount}</span>
         </div>
 
-        {loading && <p className="text-gray-600">Loading bookings...</p>}
+        {loading && <p className="text-gray-600">{t('loadingBookings')}</p>}
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
@@ -444,32 +530,75 @@ export default function AdminBookingsPage() {
 
         {!loading && !error && sorted.length === 0 && (
           <div className="bg-white rounded-xl border border-gray-200 p-6 text-gray-600">
-            No bookings for this date.
+            {t('noBookingsForDate')}
           </div>
         )}
 
         {!loading && !error && sorted.length > 0 && (
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 text-left text-gray-600">
                   <tr>
-                    <th className="px-4 py-3 font-semibold">Time</th>
-                    <th className="px-4 py-3 font-semibold">Email</th>
-                    <th className="px-4 py-3 font-semibold">Phone</th>
-                    <th className="px-4 py-3 font-semibold">Status</th>
-                    <th className="px-4 py-3 font-semibold">Created</th>
+                    <th className="px-4 py-3 font-semibold">{t('tableTime')}</th>
+                    <th className="px-4 py-3 font-semibold">{t('tableEmail')}</th>
+                    <th className="px-4 py-3 font-semibold">{t('tablePhone')}</th>
+                    <th className="px-4 py-3 font-semibold">{t('tableStatus')}</th>
+                    <th className="px-4 py-3 font-semibold">{t('tableCreated')}</th>
+                    <th className="px-4 py-3 font-semibold text-right">{t('tableActions')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {sorted.map((b) => (
-                    <tr key={b.bookingId} className="border-t border-gray-100">
+                    <tr key={b.bookingId} className="border-t border-gray-100 hover:bg-gray-50/50 transition">
                       <td className="px-4 py-3 text-gray-800 font-medium">{b.time}</td>
                       <td className="px-4 py-3 text-gray-700">{b.email}</td>
                       <td className="px-4 py-3 text-gray-700">{b.phone || '—'}</td>
-                      <td className="px-4 py-3 text-gray-700">{b.status}</td>
-                      <td className="px-4 py-3 text-gray-700">
-                        {new Date(b.createdAt).toLocaleString()}
+                      <td className="px-4 py-3">
+                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                          b.status === 'CONFIRMED' ? 'bg-emerald-100 text-emerald-700' :
+                          b.status === 'CANCELLED' ? 'bg-red-100 text-red-700' :
+                          b.status === 'COMPLETED' ? 'bg-blue-100 text-blue-700' :
+                          'bg-purple-100 text-purple-700'
+                        }`}>
+                          {statusLabels[b.status] || b.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-500">
+                        {new Date(b.createdAt).toLocaleString(language === 'sr' ? 'sr-RS' : 'en-US')}
+                      </td>
+                      <td className="px-4 py-3 text-right space-x-1.5 whitespace-nowrap">
+                        {b.status === 'CONFIRMED' && (
+                          <>
+                            <button
+                              onClick={() => {
+                                setReschedulingBooking(b);
+                                setRescheduleDate(b.date);
+                              }}
+                              className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-gray-200 text-gray-700 bg-white hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 transition"
+                            >
+                              {t('btnReschedule')}
+                            </button>
+                            <button
+                              onClick={() => handleStatusChange(b, 'COMPLETED')}
+                              className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-transparent transition"
+                            >
+                              {t('btnComplete')}
+                            </button>
+                            <button
+                              onClick={() => handleStatusChange(b, 'NO_SHOW')}
+                              className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 border border-transparent transition"
+                            >
+                              {t('btnNoShow')}
+                            </button>
+                            <button
+                              onClick={() => handleStatusChange(b, 'CANCELLED')}
+                              className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 border border-transparent transition"
+                            >
+                              {t('btnCancel')}
+                            </button>
+                          </>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -479,6 +608,98 @@ export default function AdminBookingsPage() {
           </div>
         )}
       </main>
+
+      {/* Reschedule Modal */}
+      {reschedulingBooking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-md rounded-2xl border border-gray-200 p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-200">
+            <button
+              onClick={() => setReschedulingBooking(null)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-lg font-bold"
+            >
+              ✕
+            </button>
+            <h3 className="text-lg font-bold text-gray-800 mb-1">{t('rescheduleTitle')}</h3>
+            <p className="text-xs text-gray-500 mb-5">
+              {t('clientLabel')} <span className="font-semibold text-gray-700">{reschedulingBooking.email}</span>
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
+                  {t('selectNewDate')}
+                </label>
+                <input
+                  type="date"
+                  value={rescheduleDate}
+                  onChange={(e) => setRescheduleDate(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">
+                  {t('selectNewSlot')}
+                </label>
+                {loadingSlots && (
+                  <p className="text-xs text-gray-400">{t('loadingAvailableSlots')}</p>
+                )}
+                {!loadingSlots && rescheduleError && (
+                  <p className="text-xs text-red-600">{rescheduleError}</p>
+                )}
+                {!loadingSlots && !rescheduleError && availableSlots.length === 0 && (
+                  <p className="text-xs text-gray-500 bg-gray-50 border rounded-lg p-3 text-center">
+                    {t('noFreeSlots')}
+                  </p>
+                )}
+                {!loadingSlots && !rescheduleError && availableSlots.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2 max-h-40 overflow-y-auto pr-1">
+                    {availableSlots.map((slot) => (
+                      <button
+                        key={slot.slotId}
+                        type="button"
+                        onClick={() => setSelectedSlot(slot)}
+                        className={`py-2 rounded-xl text-xs font-medium border text-center transition ${
+                          selectedSlot?.slotId === slot.slotId
+                            ? 'bg-rose-50 border-rose-500 text-rose-700 shadow-sm'
+                            : 'bg-white border-gray-200 text-gray-700 hover:border-rose-300'
+                        }`}
+                      >
+                        {slot.time}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setReschedulingBooking(null)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
+              >
+                {t('btnCancelReschedule')}
+              </button>
+              <button
+                type="button"
+                disabled={rescheduling || !selectedSlot}
+                onClick={handleRescheduleSubmit}
+                className="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-semibold py-2.5 rounded-xl text-sm transition shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {rescheduling ? (
+                  <>
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    {t('savingReschedule')}
+                  </>
+                ) : (
+                  t('btnConfirmReschedule')
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

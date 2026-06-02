@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import type { BookingResult } from '../api/apiClient';
+import { useTranslation } from '../context/LanguageContext';
+import LanguageSelector from '../components/LanguageSelector';
 
 function buildGoogleCalendarUrl(booking: BookingResult): string {
   const [h, m] = booking.time.split(':').map(Number);
@@ -20,6 +22,14 @@ export default function ConfirmationPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const booking = location.state as BookingResult | null;
+  const { t } = useTranslation();
+
+  const statusLabels: Record<string, string> = {
+    CONFIRMED: t('statusConfirmed'),
+    CANCELLED: t('statusCancelled'),
+    COMPLETED: t('statusCompleted'),
+    NO_SHOW: t('statusNoShow'),
+  };
 
   useEffect(() => {
     if (!booking) navigate('/home', { replace: true });
@@ -29,18 +39,19 @@ export default function ConfirmationPage() {
 
   return (
     <div className="min-h-screen bg-rose-50 flex items-center justify-center p-4">
+      <LanguageSelector floating />
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md text-center">
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
           ✓
         </div>
-        <h1 className="text-2xl font-bold text-gray-800 mb-1">Booking Confirmed!</h1>
-        <p className="text-gray-500 text-sm mb-6">A confirmation email has been sent to you.</p>
+        <h1 className="text-2xl font-bold text-gray-800 mb-1">{t('bookingConfirmedTitle')}</h1>
+        <p className="text-gray-500 text-sm mb-6">{t('bookingConfirmedSubtitle')}</p>
 
         <div className="bg-gray-50 rounded-xl p-4 mb-6 text-left space-y-3">
-          <Row label="Date" value={booking.date} />
-          <Row label="Time" value={booking.time} />
-          <Row label="Status" value={booking.status} valueClass="text-green-600 font-semibold" />
-          <Row label="Booking ID" value={booking.bookingId} valueClass="font-mono text-xs text-gray-500" />
+          <Row label={t('detailsDate')} value={booking.date} />
+          <Row label={t('detailsTime')} value={booking.time} />
+          <Row label={t('tableStatus')} value={statusLabels[booking.status] || booking.status} valueClass="text-green-600 font-semibold" />
+          <Row label={t('detailsId')} value={booking.bookingId} valueClass="font-mono text-xs text-gray-500" />
         </div>
 
         <a
@@ -49,14 +60,14 @@ export default function ConfirmationPage() {
           rel="noopener noreferrer"
           className="block w-full border border-rose-300 text-rose-600 font-medium py-2.5 rounded-lg hover:bg-rose-50 transition mb-3"
         >
-          Add to Google Calendar
+          {t('addToCalendar')}
         </a>
 
         <Link
           to="/home"
           className="block w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-2.5 rounded-lg transition"
         >
-          Back to Home
+          {t('goToHomeButton')}
         </Link>
       </div>
     </div>

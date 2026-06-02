@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { LanguageProvider } from './context/LanguageContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 
@@ -13,14 +14,16 @@ import GalleryPage from './pages/GalleryPage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminBookingsPage from './pages/AdminBookingsPage';
+import AdminSlotsPage from './pages/AdminSlotsPage';
 import MyBookingsPage from './pages/MyBookingsPage';
 import ProfilePage from './pages/ProfilePage';
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Routes>
+    <LanguageProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <Routes>
 
           {/* PUBLIC */}
           <Route path="/login" element={<LoginPage />} />
@@ -40,6 +43,7 @@ export default function App() {
             <Route element={<AdminRoute />}>
               <Route path="/admin/users" element={<AdminUsersPage />} />
               <Route path="/admin/bookings" element={<AdminBookingsPage />} />
+              <Route path="/admin/slots" element={<AdminSlotsPage />} />
             </Route>
           </Route>
 
@@ -49,5 +53,6 @@ export default function App() {
         </Routes>
       </AuthProvider>
     </BrowserRouter>
+  </LanguageProvider>
   );
 }

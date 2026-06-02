@@ -2,11 +2,18 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../api/apiClient';
 import type { Slot } from '../api/apiClient';
+import { useTranslation } from '../context/LanguageContext';
+import LanguageSelector from '../components/LanguageSelector';
 
-const DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
-const MONTHS = [
+const DAYS_EN = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+const DAYS_SR = ['Ne', 'Po', 'Ut', 'Sr', 'Če', 'Pe', 'Su'];
+const MONTHS_EN = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
+];
+const MONTHS_SR = [
+  'Januar', 'Februar', 'Mart', 'April', 'Maj', 'Jun',
+  'Jul', 'Avgust', 'Septembar', 'Oktobar', 'Novembar', 'Decembar',
 ];
 
 function toDateStr(d: Date): string {
@@ -25,7 +32,11 @@ function isPastOrToday(year: number, month: number, day: number): boolean {
 
 export default function BookingPage() {
   const navigate = useNavigate();
+  const { t, language } = useTranslation();
   const today = new Date();
+
+  const DAYS = language === 'sr' ? DAYS_SR : DAYS_EN;
+  const MONTHS = language === 'sr' ? MONTHS_SR : MONTHS_EN;
 
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
@@ -45,9 +56,9 @@ export default function BookingPage() {
     api
       .getSlots(selectedDate)
       .then((data) => setSlots(data.slots))
-      .catch(() => setError('Failed to load slots for this date'))
+      .catch(() => setError(t('failedToLoadSlots')))
       .finally(() => setSlotsLoading(false));
-  }, [selectedDate]);
+  }, [selectedDate, t]);
 
   const prevMonth = () => {
     if (viewMonth === 0) { setViewYear((y) => y - 1); setViewMonth(11); }
@@ -84,9 +95,12 @@ export default function BookingPage() {
   return (
     <div className="min-h-screen bg-rose-50 py-10 px-4">
       <div className="max-w-xl mx-auto">
-        <div className="flex items-center gap-3 mb-6">
-          <Link to="/home" className="text-gray-400 hover:text-rose-600 transition text-lg">←</Link>
-          <h1 className="text-2xl font-bold text-gray-800">Book an Appointment</h1>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <Link to="/home" className="text-gray-400 hover:text-rose-600 transition text-lg">←</Link>
+            <h1 className="text-2xl font-bold text-gray-800">{t('bookAppointmentTitle')}</h1>
+          </div>
+          <LanguageSelector />
         </div>
 
         {/* Calendar */}
@@ -153,11 +167,13 @@ export default function BookingPage() {
         {selectedDate && (
           <div className="bg-white rounded-2xl shadow-sm p-5 mb-5">
             <h2 className="font-semibold text-gray-800 mb-3">
-              Available times for <span className="text-rose-600">{selectedDate}</span>
+              {t('availableTimesFor').split('{date}')[0]}
+              <span className="text-rose-600">{selectedDate}</span>
+              {t('availableTimesFor').split('{date}')[1] || ''}
             </h2>
-            {slotsLoading && <p className="text-gray-400 text-sm">Loading…</p>}
+            {slotsLoading && <p className="text-gray-400 text-sm">{t('loading')}</p>}
             {!slotsLoading && availableSlots.length === 0 && (
-              <p className="text-gray-400 text-sm">No available slots for this date.</p>
+              <p className="text-gray-400 text-sm">{t('noAvailableSlots')}</p>
             )}
             <div className="grid grid-cols-3 gap-2">
               {availableSlots.map((slot) => (
@@ -191,8 +207,8 @@ export default function BookingPage() {
             className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-3.5 rounded-xl transition disabled:opacity-50 shadow-sm"
           >
             {booking
-              ? 'Confirming…'
-              : `Confirm – ${selectedSlot.date} at ${selectedSlot.time}`}
+              ? t('confirming')
+              : t('confirmBooking').replace('{date}', selectedSlot.date).replace('{time}', selectedSlot.time)}
           </button>
         )}
       </div>

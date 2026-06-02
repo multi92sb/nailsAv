@@ -182,6 +182,33 @@ functions:
           authorizer:
             name: jwtAuthorizer
 
+  adminGenerateSlots:
+    handler: src/handlers/adminGenerateSlots.handler
+    events:
+      - httpApi:
+          path: /admin/slots
+          method: POST
+          authorizer:
+            name: jwtAuthorizer
+
+  adminDeleteSlot:
+    handler: src/handlers/adminDeleteSlot.handler
+    events:
+      - httpApi:
+          path: /admin/slots
+          method: DELETE
+          authorizer:
+            name: jwtAuthorizer
+
+  adminModifyBooking:
+    handler: src/handlers/adminModifyBooking.handler
+    events:
+      - httpApi:
+          path: /admin/bookings/{bookingId}
+          method: PATCH
+          authorizer:
+            name: jwtAuthorizer
+
   reminder:
     handler: src/handlers/reminder.handler
     events:
