@@ -18,13 +18,13 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
 
     const { email, password } = parsed.data;
 
-    // 🔥 koristi Scan (radi sigurno lokalno)
     const result = await docClient.send(
       new ScanCommand({
         TableName: TABLE_NAME,
-        FilterExpression: 'email = :email',
+        FilterExpression: 'email = :email AND entityType = :et',
         ExpressionAttributeValues: {
           ':email': email,
+          ':et': 'USER',
         },
       }),
     );
