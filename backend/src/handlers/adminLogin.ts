@@ -23,8 +23,12 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         TableName: TABLE_NAME,
         IndexName: 'EmailIndex',
         KeyConditionExpression: 'email = :email',
-        ExpressionAttributeValues: { ':email': email },
-        Limit: 1,
+        FilterExpression: 'entityType = :entityType AND SK = :profile',
+        ExpressionAttributeValues: {
+          ':email': email,
+          ':entityType': 'USER',
+          ':profile': 'PROFILE',
+        },
       }),
     );
 

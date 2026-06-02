@@ -7,6 +7,7 @@
     "deploy:stage": "node tools/runServerlessWithEnv.js deploy stage",
     "deploy:prod": "node tools/runServerlessWithEnv.js deploy prod",
     "seed": "ts-node -r tsconfig-paths/register src/scripts/seed.ts",
+    "admin:reset": "ts-node -r tsconfig-paths/register src/scripts/resetAdmin.ts",
     "test": "jest",
     "dynamo:start": "node tools/runDynamoLocal.js",
     "dynamo:admin": "node tools/runDynamoAdmin.js",

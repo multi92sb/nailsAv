@@ -1,5 +1,5 @@
 import type { APIGatewayProxyHandlerV2 } from 'aws-lambda';
-import { ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { QueryCommand } from '@aws-sdk/lib-dynamodb';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { docClient, TABLE_NAME } from '../db/client';
@@ -19,19 +19,22 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     const { email, password } = parsed.data;
 
     const result = await docClient.send(
-      new ScanCommand({
+      new QueryCommand({
         TableName: TABLE_NAME,
-        FilterExpression: 'email = :email AND entityType = :et',
+        IndexName: 'EmailIndex',
+        KeyConditionExpression: 'email = :email',
+        FilterExpression: 'entityType = :entityType AND SK = :profile',
         ExpressionAttributeValues: {
           ':email': email,
-          ':et': 'USER',
+          ':entityType': 'USER',
+          ':profile': 'PROFILE',
         },
       }),
     );
 
     const user = result.Items?.[0];
 
-    // 🔥 fallback hash (da bcrypt ne pukne)
+    //  fallback hash
     const passwordHash =
       user?.password ||
       user?.passwordHash ||

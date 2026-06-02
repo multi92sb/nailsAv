@@ -15,6 +15,9 @@ node_modules/
 # Serverless Framework
 .serverless/
 
+# Other
+opencode-config/
+
 # DynamoDB Local
 backend/dynamodb-local/
 backend/.dynamodb/
