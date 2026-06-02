@@ -146,6 +146,42 @@ functions:
           authorizer:
             name: jwtAuthorizer
 
+  getMyBookings:
+    handler: src/handlers/getMyBookings.handler
+    events:
+      - httpApi:
+          path: /my-bookings
+          method: GET
+          authorizer:
+            name: jwtAuthorizer
+
+  cancelBooking:
+    handler: src/handlers/cancelBooking.handler
+    events:
+      - httpApi:
+          path: /cancel-booking
+          method: POST
+          authorizer:
+            name: jwtAuthorizer
+
+  getMe:
+    handler: src/handlers/getMe.handler
+    events:
+      - httpApi:
+          path: /me
+          method: GET
+          authorizer:
+            name: jwtAuthorizer
+
+  updateMe:
+    handler: src/handlers/updateMe.handler
+    events:
+      - httpApi:
+          path: /me
+          method: PATCH
+          authorizer:
+            name: jwtAuthorizer
+
   reminder:
     handler: src/handlers/reminder.handler
     events:

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "serverless offline",
+    "dev": "serverless offline --stage dev",
     "deploy:stage": "node tools/runServerlessWithEnv.js deploy stage",
     "deploy:prod": "node tools/runServerlessWithEnv.js deploy prod",
     "seed": "ts-node -r tsconfig-paths/register src/scripts/seed.ts",

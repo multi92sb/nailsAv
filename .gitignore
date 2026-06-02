@@ -17,6 +17,7 @@ node_modules/
 
 # Other
 opencode-config/
+docs/
 
 # DynamoDB Local
 backend/dynamodb-local/

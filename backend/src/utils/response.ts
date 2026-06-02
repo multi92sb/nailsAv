@@ -35,6 +35,12 @@ export const forbidden = (message = 'Forbidden'): APIGatewayProxyResultV2 => ({
   body: JSON.stringify({ error: message }),
 });
 
+export const notFound = (message = 'Not found'): APIGatewayProxyResultV2 => ({
+  statusCode: 404,
+  headers,
+  body: JSON.stringify({ error: message }),
+});
+
 export const conflict = (message: string): APIGatewayProxyResultV2 => ({
   statusCode: 409,
   headers,

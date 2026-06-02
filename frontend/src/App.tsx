@@ -13,6 +13,8 @@ import GalleryPage from './pages/GalleryPage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminBookingsPage from './pages/AdminBookingsPage';
+import MyBookingsPage from './pages/MyBookingsPage';
+import ProfilePage from './pages/ProfilePage';
 
 export default function App() {
   return (
@@ -31,6 +33,8 @@ export default function App() {
             <Route path="/book" element={<BookingPage />} />
             <Route path="/confirmation" element={<ConfirmationPage />} />
             <Route path="/gallery" element={<GalleryPage />} />
+            <Route path="/my-bookings" element={<MyBookingsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
 
             {/* ADMIN PROTECTED */}
             <Route element={<AdminRoute />}>

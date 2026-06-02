@@ -268,6 +268,12 @@ export default function HomePage() {
                 Admin Users
               </Link>
             )}
+            <Link to="/my-bookings" className="text-gray-600 hover:text-rose-600 transition">
+              My Bookings
+            </Link>
+            <Link to="/profile" className="text-gray-600 hover:text-rose-600 transition">
+              Profile
+            </Link>
             <Link to="/gallery" className="text-gray-600 hover:text-rose-600 transition">
               Gallery
             </Link>

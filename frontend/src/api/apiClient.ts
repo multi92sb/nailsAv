@@ -73,6 +73,24 @@ export interface AdminBooking {
   createdAt: string;
 }
 
+export interface MyBooking {
+  bookingId: string;
+  date: string;
+  time: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface UserProfile {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  role: 'USER' | 'ADMIN';
+  createdAt: string;
+}
+
 export const api = {
   register: (body: {
     firstName: string;
@@ -110,4 +128,19 @@ export const api = {
     }),
 
   getMedia: () => request<{ media: { key: string; url: string }[] }>('/media'),
+
+  getMyBookings: () =>
+    request<{ bookings: MyBooking[] }>('/my-bookings', { auth: true }),
+
+  cancelBooking: (bookingId: string) =>
+    request<{ bookingId: string; status: string }>('/cancel-booking', {
+      method: 'POST',
+      body: { bookingId },
+      auth: true,
+    }),
+
+  getMe: () => request<{ user: UserProfile }>('/me', { auth: true }),
+
+  updateMe: (body: { firstName?: string; lastName?: string; phone?: string }) =>
+    request<{ user: UserProfile }>('/me', { method: 'PATCH', body, auth: true }),
 };
