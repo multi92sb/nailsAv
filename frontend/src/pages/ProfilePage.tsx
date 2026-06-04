@@ -86,9 +86,11 @@ export default function ProfilePage() {
             <Link to="/home" className="text-gray-600 hover:text-rose-600 transition">
               {t('navHome')}
             </Link>
-            <Link to="/my-bookings" className="text-gray-600 hover:text-rose-600 transition">
-              {t('navMyBookings')}
-            </Link>
+            {user?.role !== 'ADMIN' && (
+              <Link to="/my-bookings" className="text-gray-600 hover:text-rose-600 transition">
+                {t('navMyBookings')}
+              </Link>
+            )}
             <LanguageSelector />
             <button onClick={handleLogout} className="text-gray-500 hover:text-rose-600 transition">
               {t('navLogout')}

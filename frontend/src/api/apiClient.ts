@@ -142,6 +142,13 @@ export const api = {
       { method: 'DELETE', auth: true },
     ),
 
+  adminUpdateSlot: (body: { date: string; oldTime: string; newTime: string; slotId: string }) =>
+    request<{ message: string; newTime: string }>('/admin/slots', {
+      method: 'PATCH',
+      body,
+      auth: true,
+    }),
+
   adminModifyBooking: (
     bookingId: string,
     body: {

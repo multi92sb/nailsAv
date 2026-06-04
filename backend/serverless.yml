@@ -200,6 +200,15 @@ functions:
           authorizer:
             name: jwtAuthorizer
 
+  adminUpdateSlot:
+    handler: src/handlers/adminUpdateSlot.handler
+    events:
+      - httpApi:
+          path: /admin/slots
+          method: PATCH
+          authorizer:
+            name: jwtAuthorizer
+
   adminModifyBooking:
     handler: src/handlers/adminModifyBooking.handler
     events:

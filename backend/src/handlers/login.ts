@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { docClient, TABLE_NAME } from '../db/client';
 import { signToken } from '../utils/jwt';
 import { badRequest, ok, serverError, unauthorized } from '../utils/response';
+import { isRateLimited } from '../utils/rateLimiter';
 
 const schema = z.object({
   email: z.string().email('Invalid email address'),
@@ -13,6 +14,15 @@ const schema = z.object({
 
 export const handler: APIGatewayProxyHandlerV2 = async (event) => {
   try {
+    const ipAddress = event.requestContext.http?.sourceIp ?? 'unknown';
+    if (isRateLimited(`login:${ipAddress}`, 5, 60000)) {
+      return {
+        statusCode: 429,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: 'Too many login attempts. Please try again later.' }),
+      };
+    }
+
     const parsed = schema.safeParse(JSON.parse(event.body ?? '{}'));
     if (!parsed.success) return badRequest(parsed.error.issues[0].message);
 

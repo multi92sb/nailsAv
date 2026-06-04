@@ -282,9 +282,11 @@ export default function HomePage() {
                 {t('adminPanel')}
               </Link>
             )}
-            <Link to="/my-bookings" className="text-gray-600 hover:text-rose-600 transition">
-              {t('navMyBookings')}
-            </Link>
+            {user?.role !== 'ADMIN' && (
+              <Link to="/my-bookings" className="text-gray-600 hover:text-rose-600 transition">
+                {t('navMyBookings')}
+              </Link>
+            )}
             <Link to="/profile" className="text-gray-600 hover:text-rose-600 transition">
               {t('navProfile')}
             </Link>

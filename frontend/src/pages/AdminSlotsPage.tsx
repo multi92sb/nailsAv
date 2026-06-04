@@ -46,6 +46,7 @@ export default function AdminSlotsPage() {
   const [startDate, setStartDate] = useState(dateInDays(1));
   const [endDate, setEndDate] = useState(dateInDays(7));
   const [selectedTimes, setSelectedTimes] = useState<string[]>(DEFAULT_TIMES);
+  const [availableTimes, setAvailableTimes] = useState<string[]>(DEFAULT_TIMES);
   const [activeWeekdays, setActiveWeekdays] = useState<number[]>([1, 2, 3, 4, 5, 6]); // Mon-Sat active
   const [generating, setGenerating] = useState(false);
   const [genMessage, setGenMessage] = useState<{ text: string; isError: boolean } | null>(null);
@@ -56,6 +57,11 @@ export default function AdminSlotsPage() {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [slotsError, setSlotsError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // Edit Slot state
+  const [editingSlotId, setEditingSlotId] = useState<string | null>(null);
+  const [editTimeValue, setEditTimeValue] = useState<string>('');
+  const [updatingSlotId, setUpdatingSlotId] = useState<string | null>(null);
 
   const handleLogout = () => {
     logout();
@@ -72,6 +78,15 @@ export default function AdminSlotsPage() {
       // Sort slots by time
       const sortedSlots = [...data.slots].sort((a, b) => a.time.localeCompare(b.time));
       setSlots(sortedSlots);
+
+      if (sortedSlots.length > 0) {
+        const times = sortedSlots.map((s) => s.time);
+        setAvailableTimes(times);
+        setSelectedTimes(times);
+      } else {
+        setAvailableTimes(DEFAULT_TIMES);
+        setSelectedTimes(DEFAULT_TIMES);
+      }
     } catch {
       setSlotsError(t('failedToLoadSlots'));
     } finally {
@@ -140,10 +155,63 @@ export default function AdminSlotsPage() {
       });
       // Filter out deleted slot locally
       setSlots((prev) => prev.filter((s) => s.slotId !== slot.slotId));
+      // Also update availableTimes and selectedTimes
+      setAvailableTimes((prev) => prev.filter((t) => t !== slot.time));
+      setSelectedTimes((prev) => prev.filter((t) => t !== slot.time));
     } catch (err: any) {
       alert(err instanceof Error ? err.message : 'Failed to delete slot.');
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleUpdateSlotTime = async (slot: Slot) => {
+    if (!editTimeValue || editTimeValue === slot.time) {
+      setEditingSlotId(null);
+      return;
+    }
+    setUpdatingSlotId(slot.slotId);
+    try {
+      await api.adminUpdateSlot({
+        date: slot.date,
+        oldTime: slot.time,
+        newTime: editTimeValue,
+        slotId: slot.slotId,
+      });
+      // Update slots state and re-sort by time
+      setSlots((prev) =>
+        prev
+          .map((s) => (s.slotId === slot.slotId ? { ...s, time: editTimeValue } : s))
+          .sort((a, b) => a.time.localeCompare(b.time)),
+      );
+      // Also update availableTimes and selectedTimes lists
+      setAvailableTimes((prev) =>
+        prev.map((t) => (t === slot.time ? editTimeValue : t)).sort(),
+      );
+      setSelectedTimes((prev) =>
+        prev.map((t) => (t === slot.time ? editTimeValue : t)),
+      );
+      setEditingSlotId(null);
+    } catch (err: any) {
+      alert(err instanceof Error ? err.message : 'Failed to update slot time.');
+    } finally {
+      setUpdatingSlotId(null);
+    }
+  };
+
+  const handleStartDateChange = (val: string) => {
+    setStartDate(val);
+    setInspectDate(val);
+    if (endDate < val) {
+      setEndDate(val);
+    }
+  };
+
+  const handleInspectDateChange = (val: string) => {
+    setInspectDate(val);
+    setStartDate(val);
+    if (endDate < val) {
+      setEndDate(val);
     }
   };
 
@@ -209,7 +277,7 @@ export default function AdminSlotsPage() {
                     <input
                       type="date"
                       value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
+                      onChange={(e) => handleStartDateChange(e.target.value)}
                       required
                       className="w-full border border-gray-200 rounded-xl px-3 py-2.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
                     />
@@ -261,7 +329,7 @@ export default function AdminSlotsPage() {
                     {t('selectHours')}
                   </label>
                   <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                    {DEFAULT_TIMES.map((time) => {
+                    {availableTimes.map((time) => {
                       const isSelected = selectedTimes.includes(time);
                       return (
                         <button
@@ -326,7 +394,7 @@ export default function AdminSlotsPage() {
                   <input
                     type="date"
                     value={inspectDate}
-                    onChange={(e) => setInspectDate(e.target.value)}
+                    onChange={(e) => handleInspectDateChange(e.target.value)}
                     className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
                   />
                   <button
@@ -364,28 +432,72 @@ export default function AdminSlotsPage() {
                       key={slot.slotId}
                       className="flex items-center justify-between border border-gray-150 rounded-xl p-3 hover:bg-gray-50 transition"
                     >
-                      <div className="flex items-center gap-3">
-                        <span className="font-bold text-gray-800 text-sm">{slot.time}</span>
-                        <span
-                          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                            slot.isAvailable
-                              ? 'bg-emerald-100 text-emerald-700'
-                              : 'bg-rose-100 text-rose-700'
-                          }`}
-                        >
-                          {slot.isAvailable ? t('freeBadge') : t('bookedBadge')}
-                        </span>
-                      </div>
+                      {editingSlotId === slot.slotId ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="time"
+                            value={editTimeValue}
+                            onChange={(e) => setEditTimeValue(e.target.value)}
+                            disabled={updatingSlotId === slot.slotId}
+                            className="border border-gray-300 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 text-gray-700"
+                            required
+                          />
+                          <button
+                            onClick={() => handleUpdateSlotTime(slot)}
+                            disabled={updatingSlotId === slot.slotId}
+                            className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 h-8 w-8 rounded-lg flex items-center justify-center transition border border-transparent hover:border-emerald-100 text-sm font-semibold"
+                            title="Save"
+                          >
+                            ✓
+                          </button>
+                          <button
+                            onClick={() => setEditingSlotId(null)}
+                            disabled={updatingSlotId === slot.slotId}
+                            className="text-gray-400 hover:text-gray-600 hover:bg-gray-50 h-8 w-8 rounded-lg flex items-center justify-center transition border border-transparent hover:border-gray-150 text-sm font-semibold"
+                            title="Cancel"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-3">
+                          <span className="font-bold text-gray-800 text-sm">{slot.time}</span>
+                          <span
+                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                              slot.isAvailable
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : 'bg-rose-100 text-rose-700'
+                            }`}
+                          >
+                            {slot.isAvailable ? t('freeBadge') : t('bookedBadge')}
+                          </span>
+                        </div>
+                      )}
 
                       {slot.isAvailable ? (
-                        <button
-                          onClick={() => handleDeleteSlot(slot)}
-                          disabled={deletingId === slot.slotId}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8 rounded-lg flex items-center justify-center transition border border-transparent hover:border-red-100 text-sm font-semibold disabled:opacity-50"
-                          title="Delete slot"
-                        >
-                          🗑️
-                        </button>
+                        <div className="flex items-center gap-1">
+                          {editingSlotId !== slot.slotId && (
+                            <button
+                              onClick={() => {
+                                setEditingSlotId(slot.slotId);
+                                setEditTimeValue(slot.time);
+                              }}
+                              disabled={deletingId === slot.slotId || updatingSlotId !== null}
+                              className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 h-8 w-8 rounded-lg flex items-center justify-center transition border border-transparent hover:border-blue-100 text-sm font-semibold disabled:opacity-50"
+                              title="Edit slot time"
+                            >
+                              ✏️
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleDeleteSlot(slot)}
+                            disabled={deletingId === slot.slotId || updatingSlotId === slot.slotId}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8 rounded-lg flex items-center justify-center transition border border-transparent hover:border-red-100 text-sm font-semibold disabled:opacity-50"
+                            title="Delete slot"
+                          >
+                            🗑️
+                          </button>
+                        </div>
                       ) : (
                         <span
                           className="text-[11px] text-gray-400 font-medium px-2"
