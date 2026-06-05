@@ -1,8 +1,6 @@
 import type { APIGatewayProxyHandlerV2WithLambdaAuthorizer } from 'aws-lambda';
-import { TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
 import { z } from 'zod';
-import { docClient, TABLE_NAME } from '../db/client';
-import { slotPK, slotSK } from '../db/tableKeys';
+import { SlotRepository } from '../db/repositories/slotRepository';
 import { badRequest, forbidden, ok, serverError, conflict } from '../utils/response';
 import { isAdmin } from '../utils/adminAuth';
 import type { AuthorizerContext } from '../types/auth';
@@ -30,40 +28,7 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
     }
 
     try {
-      await docClient.send(
-        new TransactWriteCommand({
-          TransactItems: [
-            {
-              Delete: {
-                TableName: TABLE_NAME,
-                Key: {
-                  PK: slotPK(date),
-                  SK: slotSK(oldTime, slotId),
-                },
-                ConditionExpression: 'isAvailable = :true',
-                ExpressionAttributeValues: {
-                  ':true': true,
-                },
-              },
-            },
-            {
-              Put: {
-                TableName: TABLE_NAME,
-                Item: {
-                  PK: slotPK(date),
-                  SK: slotSK(newTime, slotId),
-                  slotId,
-                  date,
-                  time: newTime,
-                  isAvailable: true,
-                  entityType: 'SLOT',
-                },
-                ConditionExpression: 'attribute_not_exists(PK) AND attribute_not_exists(SK)',
-              },
-            },
-          ],
-        }),
-      );
+      await SlotRepository.updateSlotTime(date, oldTime, newTime, slotId);
 
       return ok({ message: 'Slot time updated successfully', newTime });
     } catch (err: unknown) {
@@ -84,3 +49,4 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
     return serverError();
   }
 };
+

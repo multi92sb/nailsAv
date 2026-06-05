@@ -1,8 +1,6 @@
 import type { APIGatewayProxyHandlerV2WithLambdaAuthorizer } from 'aws-lambda';
-import { UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { z } from 'zod';
-import { docClient, TABLE_NAME } from '../db/client';
-import { userPK, userSK } from '../db/tableKeys';
+import { UserRepository } from '../db/repositories/userRepository';
 import type { AuthorizerContext } from '../types/auth';
 import { badRequest, forbidden, ok, serverError } from '../utils/response';
 import { isAdmin } from '../utils/adminAuth';
@@ -25,23 +23,7 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
 
     const { role } = parsed.data;
 
-    await docClient.send(
-      new UpdateCommand({
-        TableName: TABLE_NAME,
-        Key: {
-          PK: userPK(userId),
-          SK: userSK(),
-        },
-        UpdateExpression: 'SET #role = :role',
-        ExpressionAttributeNames: {
-          '#role': 'role',
-        },
-        ExpressionAttributeValues: {
-          ':role': role,
-        },
-        ConditionExpression: 'attribute_exists(PK) AND attribute_exists(SK)',
-      }),
-    );
+    await UserRepository.updateRole(userId, role);
 
     return ok({ userId, role });
   } catch (err: unknown) {
@@ -58,3 +40,4 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
     return serverError();
   }
 };
+

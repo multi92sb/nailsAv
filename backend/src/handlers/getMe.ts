@@ -1,7 +1,5 @@
 import type { APIGatewayProxyHandlerV2WithLambdaAuthorizer } from 'aws-lambda';
-import { GetCommand } from '@aws-sdk/lib-dynamodb';
-import { docClient, TABLE_NAME } from '../db/client';
-import { userPK, userSK } from '../db/tableKeys';
+import { UserRepository } from '../db/repositories/userRepository';
 import { ok, serverError } from '../utils/response';
 import type { AuthorizerContext } from '../types/auth';
 
@@ -11,17 +9,7 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
   try {
     const { userId } = event.requestContext.authorizer.lambda;
 
-    const result = await docClient.send(
-      new GetCommand({
-        TableName: TABLE_NAME,
-        Key: {
-          PK: userPK(userId),
-          SK: userSK(),
-        },
-      }),
-    );
-
-    const user = result.Item;
+    const user = await UserRepository.getById(userId);
     if (!user) {
       return serverError('User not found');
     }
@@ -42,3 +30,4 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
     return serverError();
   }
 };
+

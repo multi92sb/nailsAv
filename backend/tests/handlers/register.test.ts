@@ -1,22 +1,17 @@
-import { mockClient } from 'aws-sdk-client-mock';
-import { DynamoDBDocumentClient, PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
-import { docClient } from '../../src/db/client';
 import { handler } from '../../src/handlers/register';
+import { UserRepository } from '../../src/db/repositories/userRepository';
 import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 
-const docClientMock = mockClient(docClient);
+jest.mock('../../src/db/repositories/userRepository');
 
 describe('Register Handler', () => {
   beforeEach(() => {
-    docClientMock.reset();
+    jest.clearAllMocks();
   });
 
   it('should register a new user successfully', async () => {
-    docClientMock.on(QueryCommand).resolves({
-      Items: [],
-      Count: 0,
-    });
-    docClientMock.on(PutCommand).resolves({});
+    (UserRepository.getByEmail as jest.Mock).mockResolvedValue(undefined);
+    (UserRepository.create as jest.Mock).mockResolvedValue(undefined);
 
     const event = {
       body: JSON.stringify({
@@ -39,6 +34,7 @@ describe('Register Handler', () => {
     const body = JSON.parse(result.body);
     expect(body.token).toBeDefined();
     expect(body.user.email).toBe('jane@example.com');
+    expect(UserRepository.create).toHaveBeenCalled();
   });
 
   it('should return 400 for validation errors', async () => {
@@ -60,12 +56,13 @@ describe('Register Handler', () => {
     const result = await handler(event, {} as any, () => {}) as any;
 
     expect(result.statusCode).toBe(400);
+    expect(UserRepository.create).not.toHaveBeenCalled();
   });
 
   it('should return 409 if email is already registered', async () => {
-    docClientMock.on(QueryCommand).resolves({
-      Items: [{ email: 'jane@example.com' }],
-      Count: 1,
+    (UserRepository.getByEmail as jest.Mock).mockResolvedValue({
+      userId: 'user-1',
+      email: 'jane@example.com',
     });
 
     const event = {
@@ -86,5 +83,7 @@ describe('Register Handler', () => {
     const result = await handler(event, {} as any, () => {}) as any;
 
     expect(result.statusCode).toBe(409);
+    expect(UserRepository.create).not.toHaveBeenCalled();
   });
 });
+

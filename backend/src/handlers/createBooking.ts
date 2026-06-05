@@ -1,9 +1,8 @@
 import type { APIGatewayProxyHandlerV2WithLambdaAuthorizer } from 'aws-lambda';
-import { GetCommand, TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuid } from 'uuid';
 import { z } from 'zod';
-import { docClient, TABLE_NAME } from '../db/client';
-import { bookingPK, bookingSK, slotPK, slotSK, userPK, userSK } from '../db/tableKeys';
+import { UserRepository } from '../db/repositories/userRepository';
+import { BookingRepository } from '../db/repositories/bookingRepository';
 import { badRequest, conflict, created, serverError } from '../utils/response';
 import { sendConfirmationEmail } from '../services/notificationService';
 import type { AuthorizerContext } from '../types/auth';
@@ -24,66 +23,24 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
     const { date, time, slotId } = parsed.data;
     const { userId, email } = event.requestContext.authorizer.lambda;
 
-    const userRes = await docClient.send(
-      new GetCommand({
-        TableName: TABLE_NAME,
-        Key: {
-          PK: userPK(userId),
-          SK: userSK(),
-        },
-        ProjectionExpression: 'phone',
-      }),
-    );
-    const phone = (userRes.Item?.phone as string | undefined) ?? '';
+    const user = await UserRepository.getById(userId);
+    const phone = user?.phone ?? '';
 
     const bookingId = uuid();
     const now = new Date().toISOString();
-    const bookingTimeSlot = `TIME#${time}#${slotId}`;
 
     try {
-      await docClient.send(
-        new TransactWriteCommand({
-          TransactItems: [
-            {
-              // Atomically mark the slot as unavailable — fails if already taken
-              Update: {
-                TableName: TABLE_NAME,
-                Key: {
-                  PK: slotPK(date),
-                  SK: slotSK(time, slotId),
-                },
-                UpdateExpression: 'SET isAvailable = :false',
-                ConditionExpression: 'isAvailable = :true',
-                ExpressionAttributeValues: {
-                  ':true': true,
-                  ':false': false,
-                },
-              },
-            },
-            {
-              Put: {
-                TableName: TABLE_NAME,
-                Item: {
-                  PK: bookingPK(userId),
-                  SK: bookingSK(bookingId),
-                  bookingId,
-                  userId,
-                  email,  // stored so the reminder Lambda can email directly
-                  phone,
-                  date,
-                  time,
-                  slotId,
-                  bookingDate: date,
-                  bookingTimeSlot,
-                  status: 'CONFIRMED',
-                  createdAt: now,
-                  entityType: 'BOOKING',
-                },
-              },
-            },
-          ],
-        }),
-      );
+      await BookingRepository.createBooking({
+        bookingId,
+        userId,
+        email,
+        phone,
+        date,
+        time,
+        slotId,
+        status: 'CONFIRMED',
+        createdAt: now,
+      }, date, time, slotId);
     } catch (err: unknown) {
       if (
         typeof err === 'object' &&
@@ -107,3 +64,4 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
     return serverError();
   }
 };
+

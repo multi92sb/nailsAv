@@ -1,7 +1,5 @@
 import type { APIGatewayProxyHandlerV2WithLambdaAuthorizer } from 'aws-lambda';
-import { QueryCommand } from '@aws-sdk/lib-dynamodb';
-import { docClient, TABLE_NAME } from '../db/client';
-import { bookingPK } from '../db/tableKeys';
+import { BookingRepository } from '../db/repositories/bookingRepository';
 import { ok, serverError } from '../utils/response';
 import type { AuthorizerContext } from '../types/auth';
 
@@ -11,24 +9,15 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
   try {
     const { userId } = event.requestContext.authorizer.lambda;
 
-    const result = await docClient.send(
-      new QueryCommand({
-        TableName: TABLE_NAME,
-        KeyConditionExpression: 'PK = :pk AND begins_with(SK, :skPrefix)',
-        ExpressionAttributeValues: {
-          ':pk': bookingPK(userId),
-          ':skPrefix': 'BOOKING#',
-        },
-      }),
-    );
+    const result = await BookingRepository.getBookingsByUserId(userId);
 
-    const bookings = (result.Items ?? [])
+    const bookings = result
       .map((item) => ({
-        bookingId: item.bookingId as string,
-        date: item.date as string,
-        time: item.time as string,
-        status: item.status as string,
-        createdAt: item.createdAt as string,
+        bookingId: item.bookingId,
+        date: item.date,
+        time: item.time,
+        status: item.status,
+        createdAt: item.createdAt,
       }))
       .sort((a, b) => {
         const dateCmp = b.date.localeCompare(a.date);
@@ -42,3 +31,4 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
     return serverError();
   }
 };
+

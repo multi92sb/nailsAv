@@ -1,13 +1,11 @@
-import { mockClient } from 'aws-sdk-client-mock';
-import { DynamoDBDocumentClient, TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
-import { docClient } from '../../src/db/client';
+import { SlotRepository } from '../../src/db/repositories/slotRepository';
 import { handler } from '../../src/handlers/adminUpdateSlot';
 
-const docClientMock = mockClient(docClient);
+jest.mock('../../src/db/repositories/slotRepository');
 
 describe('AdminUpdateSlot Handler', () => {
   beforeEach(() => {
-    docClientMock.reset();
+    jest.clearAllMocks();
   });
 
   it('should deny access if user is not an admin', async () => {
@@ -31,10 +29,11 @@ describe('AdminUpdateSlot Handler', () => {
 
     const result = await (handler(event, {} as any, () => {}) as Promise<any>);
     expect(result.statusCode).toBe(403);
+    expect(SlotRepository.updateSlotTime).not.toHaveBeenCalled();
   });
 
   it('should successfully update slot time', async () => {
-    docClientMock.on(TransactWriteCommand).resolves({});
+    (SlotRepository.updateSlotTime as jest.Mock).mockResolvedValue(undefined);
 
     const event = {
       body: JSON.stringify({
@@ -58,6 +57,12 @@ describe('AdminUpdateSlot Handler', () => {
     expect(result.statusCode).toBe(200);
     const body = JSON.parse(result.body);
     expect(body.newTime).toBe('09:30');
+    expect(SlotRepository.updateSlotTime).toHaveBeenCalledWith(
+      '2026-06-15',
+      '09:00',
+      '09:30',
+      'slot-uuid-1'
+    );
   });
 
   it('should return 400 for validation errors', async () => {
@@ -81,12 +86,13 @@ describe('AdminUpdateSlot Handler', () => {
 
     const result = await (handler(event, {} as any, () => {}) as Promise<any>);
     expect(result.statusCode).toBe(400);
+    expect(SlotRepository.updateSlotTime).not.toHaveBeenCalled();
   });
 
   it('should return 409 if transaction is canceled (slot booked or duplicate new time)', async () => {
     const txError = new Error('Transaction cancelled');
     txError.name = 'TransactionCanceledException';
-    docClientMock.on(TransactWriteCommand).rejects(txError);
+    (SlotRepository.updateSlotTime as jest.Mock).mockRejectedValue(txError);
 
     const event = {
       body: JSON.stringify({
@@ -112,3 +118,4 @@ describe('AdminUpdateSlot Handler', () => {
     expect(body.error).toContain('Slot update failed');
   });
 });
+

@@ -1,8 +1,6 @@
 import type { APIGatewayProxyHandlerV2WithLambdaAuthorizer } from 'aws-lambda';
-import { DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import { z } from 'zod';
-import { docClient, TABLE_NAME } from '../db/client';
-import { slotPK, slotSK } from '../db/tableKeys';
+import { SlotRepository } from '../db/repositories/slotRepository';
 import { badRequest, forbidden, ok, serverError } from '../utils/response';
 import { isAdmin } from '../utils/adminAuth';
 import type { AuthorizerContext } from '../types/auth';
@@ -25,19 +23,7 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
     const { date, time, slotId } = parsed.data;
 
     try {
-      await docClient.send(
-        new DeleteCommand({
-          TableName: TABLE_NAME,
-          Key: {
-            PK: slotPK(date),
-            SK: slotSK(time, slotId),
-          },
-          ConditionExpression: 'isAvailable = :true',
-          ExpressionAttributeValues: {
-            ':true': true,
-          },
-        }),
-      );
+      await SlotRepository.deleteSlot(date, time, slotId);
 
       return ok({ message: 'Slot deleted successfully' });
     } catch (err: unknown) {
@@ -56,3 +42,4 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
     return serverError();
   }
 };
+

@@ -1,8 +1,7 @@
 import type { APIGatewayProxyHandlerV2 } from 'aws-lambda';
-import { QueryCommand } from '@aws-sdk/lib-dynamodb';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
-import { docClient, TABLE_NAME } from '../db/client';
+import { UserRepository } from '../db/repositories/userRepository';
 import { signToken } from '../utils/jwt';
 import { badRequest, ok, serverError, unauthorized } from '../utils/response';
 import { isRateLimited } from '../utils/rateLimiter';
@@ -28,26 +27,11 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
 
     const { email, password } = parsed.data;
 
-    const result = await docClient.send(
-      new QueryCommand({
-        TableName: TABLE_NAME,
-        IndexName: 'EmailIndex',
-        KeyConditionExpression: 'email = :email',
-        FilterExpression: 'entityType = :entityType AND SK = :profile',
-        ExpressionAttributeValues: {
-          ':email': email,
-          ':entityType': 'USER',
-          ':profile': 'PROFILE',
-        },
-      }),
-    );
-
-    const user = result.Items?.[0];
+    const user = await UserRepository.getByEmail(email);
 
     //  fallback hash
     const passwordHash =
       user?.password ||
-      user?.passwordHash ||
       '$2b$12$invalidhashfortimingprotection00000000000000000';
 
     const valid = await bcrypt.compare(password, passwordHash);
@@ -56,7 +40,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       return unauthorized('Invalid email or password');
     }
 
-    const role = (user.role as 'USER' | 'ADMIN' | undefined) ?? 'USER';
+    const role = user.role ?? 'USER';
 
     const token = signToken({
       userId: user.userId,
@@ -80,3 +64,4 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     return serverError();
   }
 };
+

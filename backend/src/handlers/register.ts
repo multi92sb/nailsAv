@@ -1,10 +1,8 @@
 import type { APIGatewayProxyHandlerV2 } from 'aws-lambda';
-import { PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import bcrypt from 'bcryptjs';
 import { v4 as uuid } from 'uuid';
 import { z } from 'zod';
-import { docClient, TABLE_NAME } from '../db/client';
-import { userPK, userSK } from '../db/tableKeys';
+import { UserRepository } from '../db/repositories/userRepository';
 import { signToken } from '../utils/jwt';
 import { badRequest, conflict, created, serverError } from '../utils/response';
 import { isRateLimited } from '../utils/rateLimiter';
@@ -35,42 +33,22 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     const role: 'USER' = 'USER';
 
     // Verify email is not already taken
-    const existing = await docClient.send(
-      new QueryCommand({
-        TableName: TABLE_NAME,
-        IndexName: 'EmailIndex',
-        KeyConditionExpression: 'email = :email',
-        FilterExpression: 'entityType = :entityType AND SK = :profile',
-        ExpressionAttributeValues: {
-          ':email': email,
-          ':entityType': 'USER',
-          ':profile': 'PROFILE',
-        },
-      }),
-    );
-    if (existing.Count && existing.Count > 0) return conflict('Email is already registered');
+    const existing = await UserRepository.getByEmail(email);
+    if (existing) return conflict('Email is already registered');
 
     const userId = uuid();
     const passwordHash = await bcrypt.hash(password, 12);
 
-    await docClient.send(
-      new PutCommand({
-        TableName: TABLE_NAME,
-        Item: {
-          PK: userPK(userId),
-          SK: userSK(),
-          userId,
-          firstName,
-          lastName,
-          email,
-          phone,
-          role,
-          password: passwordHash,
-          createdAt: new Date().toISOString(),
-          entityType: 'USER',
-        },
-      }),
-    );
+    await UserRepository.create({
+      userId,
+      firstName,
+      lastName,
+      email,
+      phone,
+      role,
+      password: passwordHash,
+      createdAt: new Date().toISOString(),
+    });
 
     const token = signToken({ userId, email, role });
     return created({ token, user: { userId, firstName, lastName, email, phone, role } });
@@ -79,3 +57,4 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     return serverError();
   }
 };
+

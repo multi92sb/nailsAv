@@ -1,9 +1,7 @@
 import type { APIGatewayProxyHandlerV2WithLambdaAuthorizer } from 'aws-lambda';
-import { QueryCommand, BatchWriteCommand } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuid } from 'uuid';
 import { z } from 'zod';
-import { docClient, TABLE_NAME } from '../db/client';
-import { slotPK, slotSK } from '../db/tableKeys';
+import { SlotRepository } from '../db/repositories/slotRepository';
 import { badRequest, forbidden, ok, serverError } from '../utils/response';
 import { isAdmin } from '../utils/adminAuth';
 import type { AuthorizerContext } from '../types/auth';
@@ -52,58 +50,26 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
 
     for (const date of dates) {
       // 1. Fetch existing slots for this date to avoid overwriting
-      const existingRes = await docClient.send(
-        new QueryCommand({
-          TableName: TABLE_NAME,
-          KeyConditionExpression: 'PK = :pk AND begins_with(SK, :skPrefix)',
-          ExpressionAttributeValues: {
-            ':pk': slotPK(date),
-            ':skPrefix': 'TIME#',
-          },
-        }),
-      );
-
-      const existingSlots = existingRes.Items ?? [];
+      const existingSlots = await SlotRepository.getSlotsByDate(date);
       const existingTimes = new Set(existingSlots.map((item) => item.time));
 
       // 2. Build put requests for slots that do not exist yet
-      const putRequests = [];
+      const slotsToCreate = [];
       for (const time of times) {
         if (!existingTimes.has(time)) {
           const slotId = uuid();
-          putRequests.push({
-            PutRequest: {
-              Item: {
-                PK: slotPK(date),
-                SK: slotSK(time, slotId),
-                slotId,
-                date,
-                time,
-                isAvailable: true,
-                entityType: 'SLOT',
-              },
-            },
+          slotsToCreate.push({
+            slotId,
+            date,
+            time,
           });
         }
       }
 
       // 3. Batch write requests (DynamoDB limit is 25 items per request)
-      if (putRequests.length > 0) {
-        for (let i = 0; i < putRequests.length; i += 25) {
-          const batch = putRequests.slice(i, i + 25);
-          let requestItems: Record<string, any> = { [TABLE_NAME]: batch };
-
-          // Loop in case of unprocessed items due to throttling/load
-          while (Object.keys(requestItems).length > 0) {
-            const response = await docClient.send(
-              new BatchWriteCommand({
-                RequestItems: requestItems,
-              }),
-            );
-            requestItems = response.UnprocessedItems || {};
-          }
-        }
-        createdCount += putRequests.length;
+      if (slotsToCreate.length > 0) {
+        const count = await SlotRepository.batchCreateSlots(slotsToCreate);
+        createdCount += count;
       }
     }
 
@@ -113,3 +79,4 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
     return serverError();
   }
 };
+

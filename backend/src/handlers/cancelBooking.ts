@@ -1,8 +1,6 @@
 import type { APIGatewayProxyHandlerV2WithLambdaAuthorizer } from 'aws-lambda';
-import { GetCommand, TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
 import { z } from 'zod';
-import { docClient, TABLE_NAME } from '../db/client';
-import { bookingPK, bookingSK, slotPK, slotSK } from '../db/tableKeys';
+import { BookingRepository } from '../db/repositories/bookingRepository';
 import { badRequest, forbidden, notFound, ok, serverError } from '../utils/response';
 import type { AuthorizerContext } from '../types/auth';
 
@@ -20,17 +18,7 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
     const { bookingId } = parsed.data;
     const { userId } = event.requestContext.authorizer.lambda;
 
-    const bookingRes = await docClient.send(
-      new GetCommand({
-        TableName: TABLE_NAME,
-        Key: {
-          PK: bookingPK(userId),
-          SK: bookingSK(bookingId),
-        },
-      }),
-    );
-
-    const booking = bookingRes.Item;
+    const booking = await BookingRepository.getBooking(userId, bookingId);
     if (!booking) {
       return notFound('Booking not found');
     }
@@ -48,44 +36,7 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
       return badRequest('Cannot cancel a booking in the past or today');
     }
 
-    const now = new Date().toISOString();
-
-    await docClient.send(
-      new TransactWriteCommand({
-        TransactItems: [
-          {
-            Update: {
-              TableName: TABLE_NAME,
-              Key: {
-                PK: bookingPK(userId),
-                SK: bookingSK(bookingId),
-              },
-              UpdateExpression: 'SET #status = :cancelled, updatedAt = :now',
-              ExpressionAttributeNames: {
-                '#status': 'status',
-              },
-              ExpressionAttributeValues: {
-                ':cancelled': 'CANCELLED',
-                ':now': now,
-              },
-            },
-          },
-          {
-            Update: {
-              TableName: TABLE_NAME,
-              Key: {
-                PK: slotPK(booking.date as string),
-                SK: slotSK(booking.time as string, booking.slotId as string),
-              },
-              UpdateExpression: 'SET isAvailable = :true',
-              ExpressionAttributeValues: {
-                ':true': true,
-              },
-            },
-          },
-        ],
-      }),
-    );
+    await BookingRepository.cancelBooking(userId, bookingId, booking.date, booking.time, booking.slotId);
 
     return ok({ bookingId, status: 'CANCELLED' });
   } catch (err) {
@@ -93,3 +44,4 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
     return serverError();
   }
 };
+

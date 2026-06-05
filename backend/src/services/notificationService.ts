@@ -40,22 +40,22 @@ export const sendConfirmationEmail = async (
     Source: FROM,
     Destination: { ToAddresses: [toEmail] },
     Message: {
-      Subject: { Data: 'Booking Confirmed – Your Nail Appointment' },
+      Subject: { Data: 'Rezervisali ste termin' },
       Body: {
         Html: {
           Data: `
-            <h2>Your appointment is confirmed! 💅</h2>
-            <p><strong>Date:</strong> ${booking.date}</p>
-            <p><strong>Time:</strong> ${booking.time}</p>
+            <h2>Uspešno ste rezervisali termin</h2>
+            <p><strong>Datum:</strong> ${booking.date}</p>
+            <p><strong>Vreme:</strong> ${booking.time}</p>
             <p><strong>Booking ID:</strong> ${booking.bookingId}</p>
-            <p>We look forward to seeing you!</p>
+            <p>Vidimo se!</p>
           `,
         },
       },
     },
   });
 
-  if (process.env.ENABLE_SMS === 'true') {
+  if (process.env.ENABLE_SMS === 'false') {
     await sendSmsNotification(booking).catch(console.error);
   }
 };
@@ -68,12 +68,12 @@ export const sendReminderEmail = async (
     Source: FROM,
     Destination: { ToAddresses: [toEmail] },
     Message: {
-      Subject: { Data: 'Reminder – Your Nail Appointment is Tomorrow' },
+      Subject: { Data: 'Podsetnik – Vas termin je sutra' },
       Body: {
         Html: {
           Data: `
-            <h2>See you tomorrow! 💅</h2>
-            <p><strong>Date:</strong> ${booking.date}</p>
+            <h2>Vidimo se sutra! 💅</h2>
+            <p><strong>Datum:</strong> ${booking.date}</p>
             <p><strong>Time:</strong> ${booking.time}</p>
             <p><strong>Booking ID:</strong> ${booking.bookingId}</p>
           `,
@@ -91,13 +91,13 @@ export const sendCancellationEmail = async (
     Source: FROM,
     Destination: { ToAddresses: [toEmail] },
     Message: {
-      Subject: { Data: 'Booking Cancelled – NailsAv' },
+      Subject: { Data: 'Otkazali ste termin' },
       Body: {
         Html: {
           Data: `
-            <h2>Your appointment has been cancelled 💅</h2>
-            <p><strong>Date:</strong> ${booking.date}</p>
-            <p><strong>Time:</strong> ${booking.time}</p>
+            <h2>Vaš termin je otkazan 💅</h2>
+            <p><strong>Datum:</strong> ${booking.date}</p>
+            <p><strong>Vreme:</strong> ${booking.time}</p>
             <p><strong>Booking ID:</strong> ${booking.bookingId}</p>
             <p>If you did not request this or have questions, please contact us.</p>
           `,
@@ -115,15 +115,15 @@ export const sendRescheduleEmail = async (
     Source: FROM,
     Destination: { ToAddresses: [toEmail] },
     Message: {
-      Subject: { Data: 'Booking Rescheduled – NailsAv' },
+      Subject: { Data: 'Promenili ste termin' },
       Body: {
         Html: {
           Data: `
-            <h2>Your appointment has been rescheduled! 💅</h2>
-            <p><strong>New Date:</strong> ${booking.date}</p>
-            <p><strong>New Time:</strong> ${booking.time}</p>
+            <h2>Vaš termin je promenjen! 💅</h2>
+            <p><strong>Novi datum:</strong> ${booking.date}</p>
+            <p><strong>Novo vreme:</strong> ${booking.time}</p>
             <p><strong>Booking ID:</strong> ${booking.bookingId}</p>
-            <p>We look forward to seeing you at your new time!</p>
+            <p>Vidimo se!</p>
           `,
         },
       },
@@ -136,12 +136,9 @@ async function sendSmsNotification(booking: BookingDetails): Promise<void> {
   const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_PHONE } = process.env;
   if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_FROM_PHONE) return;
 
-  // Dynamic import keeps Twilio out of the Lambda bundle when SMS is disabled
   const { default: twilio } = await import('twilio');
   const client = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
 
-  // NOTE: recipient phone number must be retrieved from the User record or passed in.
-  // This stub shows the correct Twilio API usage.
   console.log(`SMS stub for booking ${booking.bookingId} on ${booking.date} at ${booking.time}`);
-  void client; // suppress unused-variable warning until recipient phone is wired up
+  void client;
 }

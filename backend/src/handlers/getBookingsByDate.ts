@@ -1,7 +1,6 @@
 import type { APIGatewayProxyHandlerV2WithLambdaAuthorizer } from 'aws-lambda';
-import { QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { z } from 'zod';
-import { docClient, TABLE_NAME } from '../db/client';
+import { BookingRepository } from '../db/repositories/bookingRepository';
 import type { AuthorizerContext } from '../types/auth';
 import { forbidden, ok, badRequest, serverError } from '../utils/response';
 import { isAdmin } from '../utils/adminAuth';
@@ -21,28 +20,18 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
 
     const { date } = parsed.data;
 
-    const result = await docClient.send(
-      new QueryCommand({
-        TableName: TABLE_NAME,
-        IndexName: 'BookingByDate',
-        KeyConditionExpression: 'bookingDate = :date AND begins_with(bookingTimeSlot, :prefix)',
-        ExpressionAttributeValues: {
-          ':date': date,
-          ':prefix': 'TIME#',
-        },
-      }),
-    );
+    const result = await BookingRepository.getBookingsByDate(date);
 
-    const bookings = (result.Items ?? []).map((item) => ({
-      bookingId: item.bookingId as string,
-      userId: item.userId as string,
-      email: item.email as string,
-      phone: (item.phone as string | undefined) ?? '',
-      date: item.date as string,
-      time: item.time as string,
-      slotId: item.slotId as string,
-      status: item.status as string,
-      createdAt: item.createdAt as string,
+    const bookings = result.map((item) => ({
+      bookingId: item.bookingId,
+      userId: item.userId,
+      email: item.email,
+      phone: item.phone ?? '',
+      date: item.date,
+      time: item.time,
+      slotId: item.slotId,
+      status: item.status,
+      createdAt: item.createdAt,
     }));
 
     return ok({ bookings });
@@ -51,4 +40,5 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
     return serverError();
   }
 };
+
 

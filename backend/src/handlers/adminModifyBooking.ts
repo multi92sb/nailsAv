@@ -1,8 +1,6 @@
 import type { APIGatewayProxyHandlerV2WithLambdaAuthorizer } from 'aws-lambda';
-import { GetCommand, TransactWriteCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { z } from 'zod';
-import { docClient, TABLE_NAME } from '../db/client';
-import { bookingPK, bookingSK, slotPK, slotSK } from '../db/tableKeys';
+import { BookingRepository } from '../db/repositories/bookingRepository';
 import { badRequest, conflict, forbidden, notFound, ok, serverError } from '../utils/response';
 import { isAdmin } from '../utils/adminAuth';
 import { sendCancellationEmail, sendRescheduleEmail } from '../services/notificationService';
@@ -35,20 +33,9 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
     const { userId, status, newSlot } = parsed.data;
 
     // 1. Fetch current booking details
-    const bookingRes = await docClient.send(
-      new GetCommand({
-        TableName: TABLE_NAME,
-        Key: {
-          PK: bookingPK(userId),
-          SK: bookingSK(bookingId),
-        },
-      }),
-    );
-
-    const booking = bookingRes.Item;
+    const booking = await BookingRepository.getBooking(userId, bookingId);
     if (!booking) return notFound('Booking not found');
 
-    const now = new Date().toISOString();
     const email = booking.email as string;
 
     // 2. Handle cancellation
@@ -57,42 +44,7 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
         return ok({ bookingId, status: 'CANCELLED' });
       }
 
-      await docClient.send(
-        new TransactWriteCommand({
-          TransactItems: [
-            {
-              Update: {
-                TableName: TABLE_NAME,
-                Key: {
-                  PK: bookingPK(userId),
-                  SK: bookingSK(bookingId),
-                },
-                UpdateExpression: 'SET #status = :cancelled, updatedAt = :now',
-                ExpressionAttributeNames: {
-                  '#status': 'status',
-                },
-                ExpressionAttributeValues: {
-                  ':cancelled': 'CANCELLED',
-                  ':now': now,
-                },
-              },
-            },
-            {
-              Update: {
-                TableName: TABLE_NAME,
-                Key: {
-                  PK: slotPK(booking.date as string),
-                  SK: slotSK(booking.time as string, booking.slotId as string),
-                },
-                UpdateExpression: 'SET isAvailable = :true',
-                ExpressionAttributeValues: {
-                  ':true': true,
-                },
-              },
-            },
-          ],
-        }),
-      );
+      await BookingRepository.cancelBooking(userId, bookingId, booking.date, booking.time, booking.slotId);
 
       // Send cancellation email in background
       sendCancellationEmail(email, {
@@ -112,75 +64,13 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
         newSlot.slotId === booking.slotId;
 
       if (!isSameSlot) {
-        const newBookingTimeSlot = `TIME#${newSlot.time}#${newSlot.slotId}`;
-        const transactItems = [];
-
-        // If current booking is not cancelled, free the old slot first
-        if (booking.status !== 'CANCELLED') {
-          transactItems.push({
-            Update: {
-              TableName: TABLE_NAME,
-              Key: {
-                PK: slotPK(booking.date as string),
-                SK: slotSK(booking.time as string, booking.slotId as string),
-              },
-              UpdateExpression: 'SET isAvailable = :true',
-              ExpressionAttributeValues: {
-                ':true': true,
-              },
-            },
-          });
-        }
-
-        // Book the new slot
-        transactItems.push({
-          Update: {
-            TableName: TABLE_NAME,
-            Key: {
-              PK: slotPK(newSlot.date),
-              SK: slotSK(newSlot.time, newSlot.slotId),
-            },
-            UpdateExpression: 'SET isAvailable = :false',
-            ConditionExpression: 'isAvailable = :true',
-            ExpressionAttributeValues: {
-              ':true': true,
-              ':false': false,
-            },
-          },
-        });
-
-        // Update the booking item
-        transactItems.push({
-          Update: {
-            TableName: TABLE_NAME,
-            Key: {
-              PK: bookingPK(userId),
-              SK: bookingSK(bookingId),
-            },
-            UpdateExpression:
-              'SET #date = :newDate, #time = :newTime, slotId = :newSlotId, bookingDate = :newDate, bookingTimeSlot = :newBookingTimeSlot, #status = :confirmed, updatedAt = :now',
-            ExpressionAttributeNames: {
-              '#date': 'date',
-              '#time': 'time',
-              '#status': 'status',
-            },
-            ExpressionAttributeValues: {
-              ':newDate': newSlot.date,
-              ':newTime': newSlot.time,
-              ':newSlotId': newSlot.slotId,
-              ':newBookingTimeSlot': newBookingTimeSlot,
-              ':confirmed': 'CONFIRMED',
-              ':now': now,
-            },
-          },
-        });
-
         try {
-          await docClient.send(
-            new TransactWriteCommand({
-              TransactItems: transactItems,
-            }),
-          );
+          await BookingRepository.rescheduleBooking(userId, bookingId, {
+            date: booking.date,
+            time: booking.time,
+            slotId: booking.slotId,
+            status: booking.status,
+          }, newSlot);
         } catch (err: unknown) {
           if (
             typeof err === 'object' &&
@@ -198,7 +88,7 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
           date: newSlot.date,
           time: newSlot.time,
           bookingId,
-        }).catch((e) => console.error('Failed to send reschedule email', e));
+        }).catch((e) => console.error('Failed to reschedule email', e));
 
         return ok({
           bookingId,
@@ -211,23 +101,7 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
 
     // 4. Handle other status updates (COMPLETED, NO_SHOW, or CONFIRMED without rescheduling)
     if (status) {
-      await docClient.send(
-        new UpdateCommand({
-          TableName: TABLE_NAME,
-          Key: {
-            PK: bookingPK(userId),
-            SK: bookingSK(bookingId),
-          },
-          UpdateExpression: 'SET #status = :status, updatedAt = :now',
-          ExpressionAttributeNames: {
-            '#status': 'status',
-          },
-          ExpressionAttributeValues: {
-            ':status': status,
-            ':now': now,
-          },
-        }),
-      );
+      await BookingRepository.updateBookingStatus(userId, bookingId, status);
 
       return ok({ bookingId, status });
     }
@@ -238,3 +112,4 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
     return serverError();
   }
 };
+

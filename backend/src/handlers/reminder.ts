@@ -1,6 +1,5 @@
 import type { ScheduledHandler } from 'aws-lambda';
-import { ScanCommand } from '@aws-sdk/lib-dynamodb';
-import { docClient, TABLE_NAME } from '../db/client';
+import { BookingRepository } from '../db/repositories/bookingRepository';
 import { sendReminderEmail } from '../services/notificationService';
 
 export const handler: ScheduledHandler = async () => {
@@ -10,26 +9,7 @@ export const handler: ScheduledHandler = async () => {
 
   console.log(`Sending reminders for bookings on ${tomorrowStr}`);
 
-  // NOTE: For large tables, create a GSI on `date` and use QueryCommand instead.
-  // Scan works fine for small datasets but consumes more read capacity.
-  const result = await docClient.send(
-    new ScanCommand({
-      TableName: TABLE_NAME,
-      FilterExpression:
-        '#date = :date AND entityType = :type AND #status = :status',
-      ExpressionAttributeNames: {
-        '#date': 'date',
-        '#status': 'status',
-      },
-      ExpressionAttributeValues: {
-        ':date': tomorrowStr,
-        ':type': 'BOOKING',
-        ':status': 'CONFIRMED',
-      },
-    }),
-  );
-
-  const bookings = result.Items ?? [];
+  const bookings = await BookingRepository.scanBookingsForReminder(tomorrowStr);
   console.log(`Found ${bookings.length} booking(s) to remind`);
 
   const results = await Promise.allSettled(
@@ -47,3 +27,4 @@ export const handler: ScheduledHandler = async () => {
     console.error(`${failed.length} reminder(s) failed to send`);
   }
 };
+

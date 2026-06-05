@@ -1,8 +1,6 @@
 import type { APIGatewayProxyHandlerV2WithLambdaAuthorizer } from 'aws-lambda';
-import { QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { z } from 'zod';
-import { docClient, TABLE_NAME } from '../db/client';
-import { slotPK } from '../db/tableKeys';
+import { SlotRepository } from '../db/repositories/slotRepository';
 import { badRequest, ok, serverError } from '../utils/response';
 import type { AuthorizerContext } from '../types/auth';
 
@@ -19,23 +17,7 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
 
     const { date } = parsed.data;
 
-    const result = await docClient.send(
-      new QueryCommand({
-        TableName: TABLE_NAME,
-        KeyConditionExpression: 'PK = :pk AND begins_with(SK, :skPrefix)',
-        ExpressionAttributeValues: {
-          ':pk': slotPK(date),
-          ':skPrefix': 'TIME#',
-        },
-      }),
-    );
-
-    const slots = (result.Items ?? []).map((item) => ({
-      slotId: item.slotId as string,
-      date: item.date as string,
-      time: item.time as string,
-      isAvailable: item.isAvailable as boolean,
-    }));
+    const slots = await SlotRepository.getSlotsByDate(date);
 
     return ok({ slots });
   } catch (err) {
@@ -43,3 +25,4 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
     return serverError();
   }
 };
+
