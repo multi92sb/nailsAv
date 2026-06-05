@@ -81,6 +81,16 @@ Relevant files:
 
 The `/admin/login` endpoint and `AdminLoginPage` still exist as an optional extra verification flow, but they are not required for entering admin routes.
 
+### 7. Database Repositories
+
+To decouple business logic from raw AWS DynamoDB details, the database access is refactored into entity-specific repositories inside `backend/src/db/repositories/`:
+
+- [userRepository.ts](file:///c:/gitHubBrame/nailsAv/backend/src/db/repositories/userRepository.ts) – Handles user registration, profile queries, role updates, and scans.
+- [slotRepository.ts](file:///c:/gitHubBrame/nailsAv/backend/src/db/repositories/slotRepository.ts) – Handles slot queries, deletions, batch creation, and time updating transactions.
+- [bookingRepository.ts](file:///c:/gitHubBrame/nailsAv/backend/src/db/repositories/bookingRepository.ts) – Handles booking queries, transactions for creation, cancellation, status updates, and reschedule logic.
+
+Unit tests in `backend/tests/` mock these repository functions instead of low-level DynamoDB clients to keep tests resilient and easy to read.
+
 ## Useful Commands
 
 Run these from the `backend` folder:
