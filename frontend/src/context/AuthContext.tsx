@@ -1,5 +1,6 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
+import { api } from '../api/apiClient';
 
 interface User {
   userId: string;
@@ -19,47 +20,74 @@ function normalizeUser(user: Omit<User, 'role'> & { role?: 'USER' | 'ADMIN' }): 
 
 interface AuthContextValue {
   user: User | null;
-  token: string | null;
-  adminToken: string | null;
-  login: (token: string, user: User) => void;
-  loginAdmin: (token: string) => void;
-  logout: () => void;
+  authenticated: boolean;
+  adminVerified: boolean;
+  loading: boolean;
+  login: (user: User) => void;
+  loginAdmin: (user: User) => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
-  const [adminToken, setAdminToken] = useState<string | null>(() => sessionStorage.getItem('adminToken'));
-  const [user, setUser] = useState<User | null>(() => {
-    const stored = localStorage.getItem('user');
-    return stored ? normalizeUser(JSON.parse(stored) as Omit<User, 'role'> & { role?: 'USER' | 'ADMIN' }) : null;
-  });
+  const [user, setUser] = useState<User | null>(null);
+  const [adminVerified, setAdminVerified] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const login = (newToken: string, newUser: User) => {
+  useEffect(() => {
+    let mounted = true;
+    api
+      .getMe()
+      .then((res) => {
+        if (mounted) setUser(normalizeUser(res.user));
+      })
+      .catch(() =>
+        api
+          .refresh()
+          .then((res) => {
+            if (mounted) setUser(normalizeUser(res.user));
+          })
+          .catch(() => undefined),
+      )
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const login = (newUser: User) => {
     const normalizedUser = normalizeUser(newUser);
-    localStorage.setItem('token', newToken);
-    localStorage.setItem('user', JSON.stringify(normalizedUser));
-    setToken(newToken);
     setUser(normalizedUser);
+    setAdminVerified(false);
   };
 
-  const loginAdmin = (newAdminToken: string) => {
-    sessionStorage.setItem('adminToken', newAdminToken);
-    setAdminToken(newAdminToken);
+  const loginAdmin = (newUser: User) => {
+    setUser(normalizeUser(newUser));
+    setAdminVerified(true);
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    sessionStorage.removeItem('adminToken');
-    setToken(null);
-    setAdminToken(null);
+  const logout = async () => {
+    await api.logout().catch(() => undefined);
     setUser(null);
+    setAdminVerified(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, adminToken, login, loginAdmin, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        authenticated: Boolean(user),
+        adminVerified,
+        loading,
+        login,
+        loginAdmin,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

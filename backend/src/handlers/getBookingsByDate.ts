@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { BookingRepository } from '../db/repositories/bookingRepository';
 import type { AuthorizerContext } from '../types/auth';
 import { forbidden, ok, badRequest, serverError } from '../utils/response';
-import { isAdmin } from '../utils/adminAuth';
+import { requireFreshAdmin } from '../utils/adminAuth';
 
 const schema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'date must be in YYYY-MM-DD format'),
@@ -13,7 +13,7 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
   event,
 ) => {
   try {
-    if (!isAdmin(event)) return forbidden('Admin access required');
+    if (!(await requireFreshAdmin(event))) return forbidden('Admin access required');
 
     const parsed = schema.safeParse(event.queryStringParameters ?? {});
     if (!parsed.success) return badRequest(parsed.error.issues[0].message);
@@ -32,6 +32,10 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
       slotId: item.slotId,
       status: item.status,
       createdAt: item.createdAt,
+      serviceId: item.serviceId,
+      referenceImageKey: item.referenceImageKey,
+      styleTags: item.styleTags ?? [],
+      notes: item.notes,
     }));
 
     return ok({ bookings });

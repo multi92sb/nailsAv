@@ -22,8 +22,8 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const { token, user } = await api.login(form);
-      login(token, user);
+      const { user } = await api.login(form);
+      login(user);
       navigate('/home');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong');

@@ -15,6 +15,10 @@ export interface Booking {
   updatedAt?: string;
   bookingDate?: string;
   bookingTimeSlot?: string;
+  serviceId?: string;
+  referenceImageKey?: string;
+  styleTags?: string[];
+  notes?: string;
 }
 
 export const BookingRepository = {

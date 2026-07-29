@@ -21,7 +21,7 @@ export default function AdminLoginPage() {
     setLoading(true);
     try {
       const res = await api.adminLogin({ email, password });
-      loginAdmin(res.token);
+      loginAdmin(res.user);
       navigate('/admin/users');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Admin login failed');
@@ -30,8 +30,8 @@ export default function AdminLoginPage() {
     }
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
   };
 

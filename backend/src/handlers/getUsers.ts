@@ -2,13 +2,13 @@ import type { APIGatewayProxyHandlerV2WithLambdaAuthorizer } from 'aws-lambda';
 import { UserRepository } from '../db/repositories/userRepository';
 import type { AuthorizerContext } from '../types/auth';
 import { forbidden, ok, serverError } from '../utils/response';
-import { isAdmin } from '../utils/adminAuth';
+import { requireFreshAdmin } from '../utils/adminAuth';
 
 export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerContext> = async (
   event,
 ) => {
   try {
-    if (!isAdmin(event)) return forbidden('Admin access required');
+    if (!(await requireFreshAdmin(event))) return forbidden('Admin access required');
 
     const result = await UserRepository.scanAll();
 

@@ -3,9 +3,10 @@ import bcrypt from 'bcryptjs';
 import { v4 as uuid } from 'uuid';
 import { z } from 'zod';
 import { UserRepository } from '../db/repositories/userRepository';
-import { signToken } from '../utils/jwt';
-import { badRequest, conflict, created, serverError } from '../utils/response';
+import { badRequest, conflict, created, serverError, tooManyRequests } from '../utils/response';
 import { isRateLimited } from '../utils/rateLimiter';
+import { createCookie } from '../utils/cookies';
+import { createRefreshToken, signAccessToken, tokenTtl } from '../utils/authTokens';
 
 const schema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -18,12 +19,8 @@ const schema = z.object({
 export const handler: APIGatewayProxyHandlerV2 = async (event) => {
   try {
     const ipAddress = event.requestContext.http?.sourceIp ?? 'unknown';
-    if (isRateLimited(`register:${ipAddress}`, 5, 60000)) {
-      return {
-        statusCode: 429,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: 'Too many registration attempts. Please try again later.' }),
-      };
+    if (await isRateLimited(`register:${ipAddress}`, 5, 60000)) {
+      return tooManyRequests('Too many registration attempts. Please try again later.');
     }
 
     const parsed = schema.safeParse(JSON.parse(event.body ?? '{}'));
@@ -50,8 +47,15 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       createdAt: new Date().toISOString(),
     });
 
-    const token = signToken({ userId, email, role });
-    return created({ token, user: { userId, firstName, lastName, email, phone, role } });
+    const token = signAccessToken({ userId, email, role });
+    const refreshToken = await createRefreshToken(userId);
+    return created(
+      { user: { userId, firstName, lastName, email, phone, role } },
+      [
+        createCookie('accessToken', token, tokenTtl.access),
+        createCookie('refreshToken', refreshToken, tokenTtl.refresh),
+      ],
+    );
   } catch (err) {
     console.error('register error', err);
     return serverError();

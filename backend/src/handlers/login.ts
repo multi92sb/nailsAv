@@ -2,9 +2,10 @@ import type { APIGatewayProxyHandlerV2 } from 'aws-lambda';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { UserRepository } from '../db/repositories/userRepository';
-import { signToken } from '../utils/jwt';
-import { badRequest, ok, serverError, unauthorized } from '../utils/response';
+import { badRequest, ok, serverError, tooManyRequests, unauthorized } from '../utils/response';
 import { isRateLimited } from '../utils/rateLimiter';
+import { createCookie } from '../utils/cookies';
+import { createRefreshToken, signAccessToken, tokenTtl } from '../utils/authTokens';
 
 const schema = z.object({
   email: z.string().email('Invalid email address'),
@@ -14,12 +15,8 @@ const schema = z.object({
 export const handler: APIGatewayProxyHandlerV2 = async (event) => {
   try {
     const ipAddress = event.requestContext.http?.sourceIp ?? 'unknown';
-    if (isRateLimited(`login:${ipAddress}`, 5, 60000)) {
-      return {
-        statusCode: 429,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: 'Too many login attempts. Please try again later.' }),
-      };
+    if (await isRateLimited(`login:${ipAddress}`, 5, 60000)) {
+      return tooManyRequests('Too many login attempts. Please try again later.');
     }
 
     const parsed = schema.safeParse(JSON.parse(event.body ?? '{}'));
@@ -42,23 +39,29 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
 
     const role = user.role ?? 'USER';
 
-    const token = signToken({
+    const token = signAccessToken({
       userId: user.userId,
       email: user.email,
       role,
     });
+    const refreshToken = await createRefreshToken(user.userId);
 
-    return ok({
-      token,
-      user: {
-        userId: user.userId,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        phone: user.phone,
-        role,
+    return ok(
+      {
+        user: {
+          userId: user.userId,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          phone: user.phone,
+          role,
+        },
       },
-    });
+      [
+        createCookie('accessToken', token, tokenTtl.access),
+        createCookie('refreshToken', refreshToken, tokenTtl.refresh),
+      ],
+    );
   } catch (err) {
     console.error('login error', err);
     return serverError();

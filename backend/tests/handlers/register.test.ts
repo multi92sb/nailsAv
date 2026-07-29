@@ -3,6 +3,14 @@ import { UserRepository } from '../../src/db/repositories/userRepository';
 import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 
 jest.mock('../../src/db/repositories/userRepository');
+jest.mock('../../src/utils/rateLimiter', () => ({
+  isRateLimited: jest.fn().mockResolvedValue(false),
+}));
+jest.mock('../../src/utils/authTokens', () => ({
+  signAccessToken: jest.fn().mockReturnValue('mock-access-token'),
+  createRefreshToken: jest.fn().mockResolvedValue('mock-refresh-token'),
+  tokenTtl: { access: 900, refresh: 2592000, admin: 1800 },
+}));
 
 describe('Register Handler', () => {
   beforeEach(() => {
@@ -32,8 +40,11 @@ describe('Register Handler', () => {
 
     expect(result.statusCode).toBe(201);
     const body = JSON.parse(result.body);
-    expect(body.token).toBeDefined();
     expect(body.user.email).toBe('jane@example.com');
+    expect(body.user.role).toBe('USER');
+    expect(result.cookies).toHaveLength(2);
+    expect(result.cookies[0]).toContain('accessToken=');
+    expect(result.cookies[1]).toContain('refreshToken=');
     expect(UserRepository.create).toHaveBeenCalled();
   });
 
@@ -86,4 +97,3 @@ describe('Register Handler', () => {
     expect(UserRepository.create).not.toHaveBeenCalled();
   });
 });
-

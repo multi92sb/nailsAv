@@ -1,8 +1,9 @@
 import type { APIGatewayProxyHandlerV2WithLambdaAuthorizer } from 'aws-lambda';
 import { z } from 'zod';
 import { BookingRepository } from '../db/repositories/bookingRepository';
+import { AuditRepository } from '../db/repositories/auditRepository';
 import { badRequest, conflict, forbidden, notFound, ok, serverError } from '../utils/response';
-import { isAdmin } from '../utils/adminAuth';
+import { requireFreshAdmin } from '../utils/adminAuth';
 import { sendCancellationEmail, sendRescheduleEmail } from '../services/notificationService';
 import type { AuthorizerContext } from '../types/auth';
 
@@ -22,7 +23,7 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
   event,
 ) => {
   try {
-    if (!isAdmin(event)) return forbidden('Admin access required');
+    if (!(await requireFreshAdmin(event))) return forbidden('Admin access required');
 
     const bookingId = event.pathParameters?.bookingId;
     if (!bookingId) return badRequest('bookingId is required');
@@ -45,6 +46,13 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
       }
 
       await BookingRepository.cancelBooking(userId, bookingId, booking.date, booking.time, booking.slotId);
+      await AuditRepository.record({
+        actorUserId: event.requestContext.authorizer.lambda.userId,
+        action: 'ADMIN_CANCEL_BOOKING',
+        targetId: bookingId,
+        details: { userId },
+        createdAt: new Date().toISOString(),
+      });
 
       // Send cancellation email in background
       sendCancellationEmail(email, {
@@ -71,6 +79,13 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
             slotId: booking.slotId,
             status: booking.status,
           }, newSlot);
+          await AuditRepository.record({
+            actorUserId: event.requestContext.authorizer.lambda.userId,
+            action: 'ADMIN_RESCHEDULE_BOOKING',
+            targetId: bookingId,
+            details: { userId, newSlot },
+            createdAt: new Date().toISOString(),
+          });
         } catch (err: unknown) {
           if (
             typeof err === 'object' &&
@@ -102,6 +117,13 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
     // 4. Handle other status updates (COMPLETED, NO_SHOW, or CONFIRMED without rescheduling)
     if (status) {
       await BookingRepository.updateBookingStatus(userId, bookingId, status);
+      await AuditRepository.record({
+        actorUserId: event.requestContext.authorizer.lambda.userId,
+        action: 'ADMIN_UPDATE_BOOKING_STATUS',
+        targetId: bookingId,
+        details: { userId, status },
+        createdAt: new Date().toISOString(),
+      });
 
       return ok({ bookingId, status });
     }

@@ -1,14 +1,19 @@
 import { SlotRepository } from '../../src/db/repositories/slotRepository';
 import { handler } from '../../src/handlers/adminUpdateSlot';
+import { requireFreshAdmin } from '../../src/utils/adminAuth';
 
 jest.mock('../../src/db/repositories/slotRepository');
+jest.mock('../../src/utils/adminAuth');
 
 describe('AdminUpdateSlot Handler', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (requireFreshAdmin as jest.Mock).mockResolvedValue(true);
   });
 
   it('should deny access if user is not an admin', async () => {
+    (requireFreshAdmin as jest.Mock).mockResolvedValue(false);
+
     const event = {
       body: JSON.stringify({
         date: '2026-06-15',
@@ -48,6 +53,7 @@ describe('AdminUpdateSlot Handler', () => {
             userId: 'admin-1',
             email: 'admin@example.com',
             role: 'ADMIN',
+            tokenType: 'admin',
           },
         },
       },
@@ -79,6 +85,7 @@ describe('AdminUpdateSlot Handler', () => {
             userId: 'admin-1',
             email: 'admin@example.com',
             role: 'ADMIN',
+            tokenType: 'admin',
           },
         },
       },
@@ -107,6 +114,7 @@ describe('AdminUpdateSlot Handler', () => {
             userId: 'admin-1',
             email: 'admin@example.com',
             role: 'ADMIN',
+            tokenType: 'admin',
           },
         },
       },

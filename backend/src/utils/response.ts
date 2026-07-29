@@ -1,21 +1,33 @@
 import type { APIGatewayProxyResultV2 } from 'aws-lambda';
 
+const allowedOrigin = process.env.CORS_ORIGIN ?? 'http://localhost:5173';
+
 const headers = {
   'Content-Type': 'application/json',
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': allowedOrigin,
+  'Access-Control-Allow-Credentials': 'true',
 };
 
-export const ok = (body: unknown): APIGatewayProxyResultV2 => ({
-  statusCode: 200,
+const json = (
+  statusCode: number,
+  body: unknown,
+  cookies?: string[],
+): APIGatewayProxyResultV2 => ({
+  statusCode,
   headers,
+  cookies,
   body: JSON.stringify(body),
 });
 
-export const created = (body: unknown): APIGatewayProxyResultV2 => ({
-  statusCode: 201,
+export const ok = (body: unknown, cookies?: string[]): APIGatewayProxyResultV2 => ({
+  statusCode: 200,
   headers,
+  cookies,
   body: JSON.stringify(body),
 });
+
+export const created = (body: unknown, cookies?: string[]): APIGatewayProxyResultV2 =>
+  json(201, body, cookies);
 
 export const badRequest = (message: string): APIGatewayProxyResultV2 => ({
   statusCode: 400,
@@ -43,6 +55,12 @@ export const notFound = (message = 'Not found'): APIGatewayProxyResultV2 => ({
 
 export const conflict = (message: string): APIGatewayProxyResultV2 => ({
   statusCode: 409,
+  headers,
+  body: JSON.stringify({ error: message }),
+});
+
+export const tooManyRequests = (message: string): APIGatewayProxyResultV2 => ({
+  statusCode: 429,
   headers,
   body: JSON.stringify({ error: message }),
 });

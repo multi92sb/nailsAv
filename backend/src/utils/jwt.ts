@@ -8,7 +8,7 @@ const getSecret = (): string => {
 };
 
 export const signToken = (
-  payload: AuthorizerContext,
+  payload: AuthorizerContext | Record<string, unknown>,
   options?: { expiresIn?: string | number },
 ): string => jwt.sign(payload, getSecret(), { expiresIn: (options?.expiresIn ?? '7d') as any });
 

@@ -3,7 +3,7 @@ import { v4 as uuid } from 'uuid';
 import { z } from 'zod';
 import { SlotRepository } from '../db/repositories/slotRepository';
 import { badRequest, forbidden, ok, serverError } from '../utils/response';
-import { isAdmin } from '../utils/adminAuth';
+import { requireFreshAdmin } from '../utils/adminAuth';
 import type { AuthorizerContext } from '../types/auth';
 
 const schema = z.object({
@@ -34,7 +34,7 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
   event,
 ) => {
   try {
-    if (!isAdmin(event)) return forbidden('Admin access required');
+    if (!(await requireFreshAdmin(event))) return forbidden('Admin access required');
 
     const parsed = schema.safeParse(JSON.parse(event.body ?? '{}'));
     if (!parsed.success) return badRequest(parsed.error.issues[0].message);

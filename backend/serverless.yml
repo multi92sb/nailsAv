@@ -14,6 +14,11 @@ provider:
     JWT_SECRET: ${env:JWT_SECRET}
     SES_FROM_EMAIL: ${env:SES_FROM_EMAIL}
     MEDIA_BUCKET: ${self:custom.mediaBucket}
+    CORS_ORIGIN: ${env:CORS_ORIGIN, 'http://localhost:5173'}
+    INSTAGRAM_ACCESS_TOKEN: ${env:INSTAGRAM_ACCESS_TOKEN, ''}
+    INSTAGRAM_USER_ID: ${env:INSTAGRAM_USER_ID, 'me'}
+    INSTAGRAM_API_VERSION: ${env:INSTAGRAM_API_VERSION, 'v23.0'}
+    INSTAGRAM_SYNC_LIMIT: ${env:INSTAGRAM_SYNC_LIMIT, '24'}
     ENABLE_SMS: ${env:ENABLE_SMS, 'false'}
     TWILIO_ACCOUNT_SID: ${env:TWILIO_ACCOUNT_SID, ''}
     TWILIO_AUTH_TOKEN: ${env:TWILIO_AUTH_TOKEN, ''}
@@ -27,6 +32,7 @@ provider:
             - dynamodb:PutItem
             - dynamodb:GetItem
             - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
             - dynamodb:Query
             - dynamodb:Scan
             - dynamodb:TransactWriteItems
@@ -47,7 +53,19 @@ provider:
             - Fn::GetAtt: [MediaBucket, Arn]
             - Fn::Sub: '${MediaBucket.Arn}/*'
   httpApi:
-    cors: true
+    cors:
+      allowedOrigins:
+        - ${env:CORS_ORIGIN, 'http://localhost:5173'}
+      allowedHeaders:
+        - Content-Type
+        - Authorization
+      allowedMethods:
+        - GET
+        - POST
+        - PATCH
+        - DELETE
+        - OPTIONS
+      allowCredentials: true
     authorizers:
       jwtAuthorizer:
         type: request
@@ -85,6 +103,20 @@ functions:
     events:
       - httpApi:
           path: /login
+          method: POST
+
+  refresh:
+    handler: src/handlers/refresh.handler
+    events:
+      - httpApi:
+          path: /auth/refresh
+          method: POST
+
+  logout:
+    handler: src/handlers/logout.handler
+    events:
+      - httpApi:
+          path: /logout
           method: POST
 
   adminLogin:
@@ -127,6 +159,33 @@ functions:
       - httpApi:
           path: /media
           method: GET
+
+  adminSyncInstagramMedia:
+    handler: src/handlers/adminSyncInstagramMedia.handler
+    events:
+      - httpApi:
+          path: /admin/media/sync-instagram
+          method: POST
+          authorizer:
+            name: jwtAuthorizer
+
+  adminUpdateMedia:
+    handler: src/handlers/adminUpdateMedia.handler
+    events:
+      - httpApi:
+          path: /admin/media/{id}
+          method: PATCH
+          authorizer:
+            name: jwtAuthorizer
+
+  getAuditEvents:
+    handler: src/handlers/getAuditEvents.handler
+    events:
+      - httpApi:
+          path: /admin/audit-events
+          method: GET
+          authorizer:
+            name: jwtAuthorizer
 
   getUsers:
     handler: src/handlers/getUsers.handler
@@ -269,7 +328,7 @@ resources:
         CorsConfiguration:
           CorsRules:
             - AllowedOrigins:
-                - '*'
+                - ${env:CORS_ORIGIN, 'http://localhost:5173'}
               AllowedMethods:
                 - GET
                 - HEAD

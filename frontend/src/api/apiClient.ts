@@ -4,26 +4,27 @@ interface RequestOptions {
   method?: string;
   body?: unknown;
   auth?: boolean;
-  tokenOverride?: string | null;
+  retryOnUnauthorized?: boolean;
 }
 
 async function request<T>(
   path: string,
-  { method = 'GET', body, auth = false, tokenOverride = null }: RequestOptions = {},
+  { method = 'GET', body, auth = false, retryOnUnauthorized = true }: RequestOptions = {},
 ): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (auth) {
-    const token = tokenOverride ?? localStorage.getItem('token');
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-  }
 
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
     headers,
+    credentials: 'include',
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 
   const data = (await res.json()) as Record<string, unknown>;
+  if (res.status === 401 && auth && retryOnUnauthorized && path !== '/auth/refresh') {
+    await request('/auth/refresh', { method: 'POST', retryOnUnauthorized: false });
+    return request<T>(path, { method, body, auth, retryOnUnauthorized: false });
+  }
   if (!res.ok) throw new Error((data.error as string) ?? 'Request failed');
   return data as T;
 }
@@ -40,6 +41,10 @@ export interface BookingResult {
   date: string;
   time: string;
   status: string;
+  serviceId?: string;
+  referenceImageKey?: string;
+  styleTags?: string[];
+  notes?: string;
 }
 
 export interface User {
@@ -71,6 +76,10 @@ export interface AdminBooking {
   slotId: string;
   status: string;
   createdAt: string;
+  serviceId?: string;
+  referenceImageKey?: string;
+  styleTags?: string[];
+  notes?: string;
 }
 
 export interface MyBooking {
@@ -79,6 +88,10 @@ export interface MyBooking {
   time: string;
   status: string;
   createdAt: string;
+  serviceId?: string;
+  referenceImageKey?: string;
+  styleTags?: string[];
+  notes?: string;
 }
 
 export interface UserProfile {
@@ -91,6 +104,20 @@ export interface UserProfile {
   createdAt: string;
 }
 
+export interface GalleryItem {
+  id: string;
+  key?: string;
+  url: string;
+  caption?: string;
+  tags: string[];
+  source: 'S3' | 'INSTAGRAM' | 'USER_REFERENCE';
+  permalink?: string;
+  featured: boolean;
+  displayOrder: number;
+  createdAt: string;
+  thumbnailUrl?: string;
+}
+
 export const api = {
   register: (body: {
     firstName: string;
@@ -98,15 +125,27 @@ export const api = {
     email: string;
     phone: string;
     password: string;
-  }) => request<{ token: string; user: User }>('/users', { method: 'POST', body }),
+  }) => request<{ user: User }>('/users', { method: 'POST', body }),
 
   login: (body: { email: string; password: string }) =>
-    request<{ token: string; user: User }>('/login', { method: 'POST', body }),
+    request<{ user: User }>('/login', { method: 'POST', body }),
+
+  refresh: () => request<{ user: User }>('/auth/refresh', { method: 'POST', retryOnUnauthorized: false }),
+
+  logout: () => request<{ message: string }>('/logout', { method: 'POST', retryOnUnauthorized: false }),
 
   getSlots: (date: string) =>
     request<{ slots: Slot[] }>(`/available-slots?date=${date}`, { auth: true }),
 
-  createBooking: (body: { date: string; time: string; slotId: string }) =>
+  createBooking: (body: {
+    date: string;
+    time: string;
+    slotId: string;
+    serviceId?: string;
+    referenceImageKey?: string;
+    styleTags?: string[];
+    notes?: string;
+  }) =>
     request<BookingResult>('/booking', { method: 'POST', body, auth: true }),
 
   getUsers: () => request<{ users: AdminUser[] }>('/users', { auth: true }),
@@ -119,15 +158,20 @@ export const api = {
     }),
 
   adminLogin: (body: { email: string; password: string }) =>
-    request<{ token: string; user: User }>('/admin/login', { method: 'POST', body }),
+    request<{ user: User }>('/admin/login', { method: 'POST', body }),
 
-  getBookingsByDate: (date: string, adminToken?: string | null) =>
+  getBookingsByDate: (date: string) =>
     request<{ bookings: AdminBooking[] }>(`/admin/bookings?date=${date}`, {
       auth: true,
-      tokenOverride: adminToken ?? null,
     }),
 
-  getMedia: () => request<{ media: { key: string; url: string }[] }>('/media'),
+  getMedia: () => request<{ media: GalleryItem[] }>('/media'),
+
+  syncInstagramMedia: () =>
+    request<{ count: number; media: GalleryItem[] }>('/admin/media/sync-instagram', {
+      method: 'POST',
+      auth: true,
+    }),
 
   adminGenerateSlots: (body: {
     startDate: string;

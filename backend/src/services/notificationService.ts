@@ -55,7 +55,7 @@ export const sendConfirmationEmail = async (
     },
   });
 
-  if (process.env.ENABLE_SMS === 'false') {
+  if (process.env.ENABLE_SMS === 'true') {
     await sendSmsNotification(booking).catch(console.error);
   }
 };

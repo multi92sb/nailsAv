@@ -63,7 +63,7 @@ export default function ProfilePage() {
 
     try {
       const res = await api.updateMe(body);
-      login(localStorage.getItem('token')!, res.user);
+      login(res.user);
       setSuccess(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update profile');

@@ -18,6 +18,10 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
         time: item.time,
         status: item.status,
         createdAt: item.createdAt,
+        serviceId: item.serviceId,
+        referenceImageKey: item.referenceImageKey,
+        styleTags: item.styleTags ?? [],
+        notes: item.notes,
       }))
       .sort((a, b) => {
         const dateCmp = b.date.localeCompare(a.date);
@@ -31,4 +35,3 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
     return serverError();
   }
 };
-

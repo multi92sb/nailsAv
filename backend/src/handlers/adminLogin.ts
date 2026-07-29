@@ -2,8 +2,11 @@ import type { APIGatewayProxyHandlerV2 } from 'aws-lambda';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { UserRepository } from '../db/repositories/userRepository';
-import { signToken } from '../utils/jwt';
-import { badRequest, forbidden, ok, serverError, unauthorized } from '../utils/response';
+import { badRequest, forbidden, ok, serverError, tooManyRequests, unauthorized } from '../utils/response';
+import { createCookie } from '../utils/cookies';
+import { signAdminToken, tokenTtl } from '../utils/authTokens';
+import { AuditRepository } from '../db/repositories/auditRepository';
+import { isRateLimited } from '../utils/rateLimiter';
 
 const schema = z.object({
   email: z.string().email('Invalid email address'),
@@ -12,6 +15,11 @@ const schema = z.object({
 
 export const handler: APIGatewayProxyHandlerV2 = async (event) => {
   try {
+    const ipAddress = event.requestContext.http?.sourceIp ?? 'unknown';
+    if (await isRateLimited(`admin-login:${ipAddress}`, 5, 60000)) {
+      return tooManyRequests('Too many admin login attempts. Please try again later.');
+    }
+
     const parsed = schema.safeParse(JSON.parse(event.body ?? '{}'));
     if (!parsed.success) return badRequest(parsed.error.issues[0].message);
 
@@ -29,22 +37,28 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     const role = user.role ?? 'USER';
     if (role !== 'ADMIN') return forbidden('Admin access required');
 
-    const token = signToken(
-      { userId: user.userId, email: user.email, role },
-      { expiresIn: '30m' },
-    );
-
-    return ok({
-      token,
-      user: {
-        userId: user.userId,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        phone: user.phone,
-        role,
-      },
+    const token = signAdminToken({ userId: user.userId, email: user.email, role });
+    await AuditRepository.record({
+      actorUserId: user.userId,
+      action: 'ADMIN_LOGIN',
+      targetId: user.userId,
+      details: { email: user.email },
+      createdAt: new Date().toISOString(),
     });
+
+    return ok(
+      {
+        user: {
+          userId: user.userId,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          phone: user.phone,
+          role,
+        },
+      },
+      [createCookie('adminAccessToken', token, tokenTtl.admin)],
+    );
   } catch (err) {
     console.error('adminLogin error', err);
     return serverError();

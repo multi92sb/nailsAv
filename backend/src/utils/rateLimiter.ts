@@ -1,17 +1,14 @@
-const cache = new Map<string, { count: number; resetTime: number }>();
+import { RateLimitRepository } from '../db/repositories/rateLimitRepository';
 
-export function isRateLimited(key: string, limit = 5, windowMs = 60000): boolean {
+export async function isRateLimited(key: string, limit = 5, windowMs = 60000): Promise<boolean> {
   const now = Date.now();
-  const record = cache.get(key);
+  const record = await RateLimitRepository.get(key);
 
   if (!record || now > record.resetTime) {
-    cache.set(key, { count: 1, resetTime: now + windowMs });
+    await RateLimitRepository.create(key, now + windowMs);
     return false;
   }
 
-  record.count++;
-  if (record.count > limit) {
-    return true;
-  }
-  return false;
+  const count = await RateLimitRepository.increment(key);
+  return count > limit;
 }

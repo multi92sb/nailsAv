@@ -28,8 +28,8 @@ export default function RegisterPage() {
     setError('');
     setLoading(true);
     try {
-      const { token, user } = await api.register(form);
-      login(token, user);
+      const { user } = await api.register(form);
+      login(user);
       navigate('/home');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
