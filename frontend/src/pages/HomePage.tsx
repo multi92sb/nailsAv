@@ -24,6 +24,7 @@ interface DashboardData {
 
 function AdminDashboard() {
   const navigate = useNavigate();
+  const { adminVerified } = useAuth();
   const today = todayStr();
   const { t, language } = useTranslation();
 
@@ -33,6 +34,12 @@ function AdminDashboard() {
 
   useEffect(() => {
     async function load() {
+      // /admin/* routes require the step-up adminAccessToken from /admin/login.
+      if (!adminVerified) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const [slotsRes, bookingsRes, usersRes] = await Promise.all([
           api.getSlots(today),
@@ -51,7 +58,7 @@ function AdminDashboard() {
       }
     }
     load();
-  }, [today]);
+  }, [today, adminVerified]);
 
   const freeSlots = useMemo(() => data.slots.filter((s) => s.isAvailable).length, [data.slots]);
   const bookedSlots = useMemo(() => data.slots.filter((s) => !s.isAvailable).length, [data.slots]);
@@ -67,6 +74,22 @@ function AdminDashboard() {
   }, [data.bookings]);
 
   const nextBooking = upcomingBookings[0] ?? null;
+
+  if (!adminVerified) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+        <p className="text-gray-600 mb-6">
+          Confirm your admin session to load bookings and manage the salon.
+        </p>
+        <button
+          onClick={() => navigate('/admin/login')}
+          className="bg-rose-600 hover:bg-rose-700 text-white font-semibold px-8 py-3 rounded-xl transition shadow-sm"
+        >
+          Continue to admin login
+        </button>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

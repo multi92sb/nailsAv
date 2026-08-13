@@ -14,6 +14,7 @@ provider:
     JWT_SECRET: ${env:JWT_SECRET}
     SES_FROM_EMAIL: ${env:SES_FROM_EMAIL}
     MEDIA_BUCKET: ${self:custom.mediaBucket}
+    IS_OFFLINE: ${env:IS_OFFLINE, ''}
     CORS_ORIGIN: ${env:CORS_ORIGIN, 'http://localhost:5173'}
     INSTAGRAM_ACCESS_TOKEN: ${env:INSTAGRAM_ACCESS_TOKEN, ''}
     INSTAGRAM_USER_ID: ${env:INSTAGRAM_USER_ID, 'me'}
@@ -71,7 +72,8 @@ provider:
         type: request
         functionName: authorizer
         enableSimpleResponses: true
-        identitySource: $request.header.Authorization
+        # Cookie-based auth (accessToken / adminAccessToken). Authorization Bearer still works inside the authorizer when present.
+        identitySource: $request.header.Cookie
 
 custom:
   tableName: NailBooking-${sls:stage}

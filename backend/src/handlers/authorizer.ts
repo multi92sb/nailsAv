@@ -15,9 +15,13 @@ export const handler: APIGatewayRequestSimpleAuthorizerHandlerV2WithContext<Auth
       const needsAdminToken = rawPath.startsWith('/admin/');
       const authHeader = event.headers?.authorization ?? event.headers?.Authorization ?? '';
       const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
-      const token =
-        (needsAdminToken ? getCookie(event, 'adminAccessToken') : getCookie(event, 'accessToken')) ??
-        bearerToken;
+      const adminToken = getCookie(event, 'adminAccessToken');
+      const accessToken = getCookie(event, 'accessToken');
+      // Prefer step-up admin cookie when present so handlers like GET /users
+      // (outside /admin/*) can still satisfy requireFreshAdmin().
+      const token = needsAdminToken
+        ? (adminToken ?? bearerToken)
+        : (adminToken ?? accessToken ?? bearerToken);
 
       if (!token) {
         return { isAuthorized: false, context: { userId: '', email: '', role: 'USER' } };
