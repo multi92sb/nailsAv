@@ -53,6 +53,13 @@ provider:
           Resource:
             - Fn::GetAtt: [MediaBucket, Arn]
             - Fn::Sub: '${MediaBucket.Arn}/*'
+        # Log group ARN without the ':*' suffix that Serverless v3 generates
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:TagResource
+          Resource:
+            - Fn::Sub: 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${self:service}-${sls:stage}-*'
   httpApi:
     cors:
       allowedOrigins:
