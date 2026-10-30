@@ -61,8 +61,8 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
       throw err;
     }
 
-    // Fire and forget — do not block the response on email delivery
-    sendConfirmationEmail(email, { date, time, bookingId }).catch((e) =>
+    // Await so Lambda doesn't freeze before delivery; failures are logged, not returned
+    await sendConfirmationEmail(email, { date, time, bookingId }).catch((e) =>
       console.error('Failed to send confirmation email', e),
     );
 

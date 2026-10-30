@@ -54,8 +54,8 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
         createdAt: new Date().toISOString(),
       });
 
-      // Send cancellation email in background
-      sendCancellationEmail(email, {
+      // Await so Lambda doesn't freeze before delivery; failures are logged, not returned
+      await sendCancellationEmail(email, {
         date: booking.date as string,
         time: booking.time as string,
         bookingId,
@@ -98,8 +98,8 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
           throw err;
         }
 
-        // Send rescheduling email in background
-        sendRescheduleEmail(email, {
+        // Await so Lambda doesn't freeze before delivery; failures are logged, not returned
+        await sendRescheduleEmail(email, {
           date: newSlot.date,
           time: newSlot.time,
           bookingId,

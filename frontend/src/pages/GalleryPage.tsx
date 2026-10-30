@@ -1,16 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../api/apiClient';
+import { api, type GalleryItem } from '../api/apiClient';
 import { useTranslation } from '../context/LanguageContext';
 import LanguageSelector from '../components/LanguageSelector';
 
-interface MediaItem {
-  key: string;
-  url: string;
-}
-
 export default function GalleryPage() {
-  const [media, setMedia] = useState<MediaItem[]>([]);
+  const [media, setMedia] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { t } = useTranslation();
 
@@ -56,7 +51,7 @@ export default function GalleryPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {media.map((item) => (
               <div
-                key={item.key}
+                key={item.id}
                 className="aspect-square rounded-xl overflow-hidden bg-gray-100 shadow-sm"
               >
                 <img

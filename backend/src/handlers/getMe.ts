@@ -7,7 +7,7 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
   event,
 ) => {
   try {
-    const { userId } = event.requestContext.authorizer.lambda;
+    const { userId, tokenType } = event.requestContext.authorizer.lambda;
 
     const user = await UserRepository.getById(userId);
     if (!user) {
@@ -24,6 +24,8 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
         role: user.role,
         createdAt: user.createdAt,
       },
+      // Lets the frontend restore the admin step-up after a page reload
+      adminVerified: tokenType === 'admin' && user.role === 'ADMIN',
     });
   } catch (err) {
     console.error('getMe error', err);

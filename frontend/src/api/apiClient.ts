@@ -217,7 +217,7 @@ export const api = {
       auth: true,
     }),
 
-  getMe: () => request<{ user: UserProfile }>('/me', { auth: true }),
+  getMe: () => request<{ user: UserProfile; adminVerified?: boolean }>('/me', { auth: true }),
 
   updateMe: (body: { firstName?: string; lastName?: string; phone?: string }) =>
     request<{ user: UserProfile }>('/me', { method: 'PATCH', body, auth: true }),
