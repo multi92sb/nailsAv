@@ -36,7 +36,7 @@ function getWorkingDates(count: number): string[] {
 /**
  * Create admin if not exists
  */
-async function seedAdmin() {
+async function seedAdmin(password: string) {
   const existing = await docClient.send(
     new GetCommand({
       TableName: TABLE_NAME,
@@ -52,13 +52,7 @@ async function seedAdmin() {
     return;
   }
 
-  // No default password: this repository is public, so the caller must choose one.
   const email = process.env.ADMIN_EMAIL ?? 'admin@example.com';
-  const password = process.env.ADMIN_PASSWORD;
-  if (!password) {
-    throw new Error('Set ADMIN_PASSWORD (and optionally ADMIN_EMAIL) to seed the admin user.');
-  }
-
   const passwordHash = await bcrypt.hash(password, 10);
 
   await docClient.send(
@@ -87,6 +81,12 @@ async function seedAdmin() {
  * Main seed
  */
 async function seed(): Promise<void> {
+  // No default password: validate this before touching the database, even if an admin already exists.
+  const password = process.env.ADMIN_PASSWORD;
+  if (!password) {
+    throw new Error('Set ADMIN_PASSWORD (and optionally ADMIN_EMAIL) to seed the admin user.');
+  }
+
   // 0. The seeded admin password is published in the README, so never seed a deployed stage.
   if (/-(stage|prod)$/.test(TABLE_NAME) && !process.env.ALLOW_SEED_DEPLOYED) {
     throw new Error(
@@ -96,7 +96,7 @@ async function seed(): Promise<void> {
   }
 
   // 1. Admin
-  await seedAdmin();
+  await seedAdmin(password);
 
   // 2. Slots
   const dates = getWorkingDates(30);
