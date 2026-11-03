@@ -83,6 +83,14 @@ async function seedAdmin() {
  * Main seed
  */
 async function seed(): Promise<void> {
+  // 0. The seeded admin password is published in the README, so never seed a deployed stage.
+  if (/-(stage|prod)$/.test(TABLE_NAME) && !process.env.ALLOW_SEED_DEPLOYED) {
+    throw new Error(
+      `Refusing to seed deployed table "${TABLE_NAME}". ` +
+        'Use "npm run admin:reset" with a strong ADMIN_PASSWORD instead.',
+    );
+  }
+
   // 1. Admin
   await seedAdmin();
 

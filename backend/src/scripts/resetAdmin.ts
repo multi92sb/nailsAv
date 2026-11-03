@@ -11,6 +11,15 @@ const explicitStage = cliArgs.find((arg) => !arg.startsWith('-'));
 const stage = explicitStage ?? process.env.APP_STAGE ?? 'dev';
 const tableName = explicitStage ? `NailBooking-${stage}` : (process.env.TABLE_NAME ?? `NailBooking-${stage}`);
 
+/** The fallback password is published in the README, so it may only be used locally. */
+if (stage !== 'dev' && !process.env.ADMIN_PASSWORD) {
+  console.error(
+    `Refusing to set the default admin password on stage "${stage}".\n` +
+      "Set ADMIN_PASSWORD (and optionally ADMIN_EMAIL) to a strong value and run again.",
+  );
+  process.exit(1);
+}
+
 async function resetAdmin(): Promise<void> {
   const existing = await docClient.send(
     new GetCommand({
@@ -48,7 +57,11 @@ async function resetAdmin(): Promise<void> {
 
   console.log(`Admin credentials reset in ${tableName}`);
   console.log(`Email: ${DEFAULT_ADMIN_EMAIL}`);
-  console.log(`Password: ${DEFAULT_ADMIN_PASSWORD}`);
+  console.log(
+    process.env.ADMIN_PASSWORD
+      ? 'Password: (taken from ADMIN_PASSWORD)'
+      : `Password: ${DEFAULT_ADMIN_PASSWORD}`,
+  );
 }
 
 resetAdmin().catch((err) => {

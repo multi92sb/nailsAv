@@ -5,12 +5,26 @@ import { MediaRepository, type GalleryItem } from '../db/repositories/mediaRepos
 import { ok, serverError } from '../utils/response';
 
 const s3 = new S3Client({ region: process.env.AWS_REGION ?? 'eu-west-1' });
-const BUCKET = process.env.MEDIA_BUCKET!;
+const BUCKET = process.env.MEDIA_BUCKET;
+
+/** A missing or unconfigured bucket means "no S3 photos", not a failure. */
+async function listBucketObjects() {
+  if (!BUCKET) return [];
+  try {
+    const list = await s3.send(new ListObjectsV2Command({ Bucket: BUCKET, MaxKeys: 50 }));
+    return list.Contents ?? [];
+  } catch (err) {
+    if ((err as { name?: string }).name === 'NoSuchBucket') {
+      console.warn(`getMedia: media bucket "${BUCKET}" does not exist`);
+      return [];
+    }
+    throw err;
+  }
+}
 
 export const handler: APIGatewayProxyHandlerV2 = async () => {
   try {
-    const list = await s3.send(new ListObjectsV2Command({ Bucket: BUCKET, MaxKeys: 50 }));
-    const objects = list.Contents ?? [];
+    const objects = await listBucketObjects();
 
     const s3Media = await Promise.all(
       objects

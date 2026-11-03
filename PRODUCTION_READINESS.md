@@ -29,7 +29,21 @@
 - #2 email delivery: `createBooking` and `adminModifyBooking` now await emails (failures logged, request still succeeds).
 - #7 admin reload: `GET /me` now returns `adminVerified`, and the frontend restores the admin session on load. Verified in the browser.
 
-Still open: #3–#6 (SES production access, domain/cookie setup, frontend hosting, prod admin password) are AWS/ops tasks.
+### Update — 2026-11-03
+
+- #8 gallery errors: `getMedia` now treats a missing or unconfigured `MEDIA_BUCKET` as "no S3 photos"
+  instead of a 500, and `GalleryPage` shows an error with a retry button on real failures.
+  Covered by `backend/tests/handlers/getMedia.test.ts`.
+- #4 (partly) cookies: `Secure` is now set on every deployed stage, not only `prod`. The
+  same-site hosting decision is still open.
+- #6 weak admin password: `admin:reset` refuses the default password on any stage other than
+  `dev`, `seed` refuses to run against a `-stage`/`-prod` table, and the README no longer presents
+  the seeded credentials as usable outside local development.
+- #15 data safety: `NailBookingTable` and `MediaBucket` carry `DeletionPolicy: Retain`, the table
+  has point-in-time recovery enabled, and the media bucket blocks all public access.
+
+Still open: #3 (SES production access), #4 (same-site domain setup), #5 (frontend hosting) are
+AWS/ops tasks, plus #14 log retention and monitoring.
 
 ## Blockers (must fix before deploy)
 
