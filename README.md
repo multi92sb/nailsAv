@@ -52,9 +52,15 @@ Relevant files:
 
 The seed script creates an admin user if it does not already exist.
 
-**Local development only.** The seed defaults to `admin@nails.com` / `admin123` (see
-`backend/src/scripts/seed.ts`). These credentials are public, so never run the seed against a
-deployed stage. For `stage` and `prod`, create the admin with a strong password instead:
+**Local development only.** Set the credentials yourself when seeding, so no default ends up in a
+shared environment:
+
+```bash
+ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD='<choose one>' npm run seed
+```
+
+The seed refuses to run against a `-stage` or `-prod` table. For a deployed stage, create the admin
+with `npm run admin:reset`, which requires `ADMIN_PASSWORD`:
 
 ```bash
 ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='<strong password>' npm run admin:reset -- --stage prod
@@ -117,12 +123,12 @@ Use:
 
 - `POST http://localhost:4000/login`
 
-Request body:
+Request body (the admin credentials you seeded with):
 
 ```json
 {
-  "email": "admin@nails.com",
-  "password": "admin123"
+  "email": "<ADMIN_EMAIL>",
+  "password": "<ADMIN_PASSWORD>"
 }
 ```
 
@@ -138,12 +144,12 @@ Use:
 
 - `POST http://localhost:4000/admin/login`
 
-Request body:
+Request body (the admin credentials you seeded with):
 
 ```json
 {
-  "email": "admin@nails.com",
-  "password": "admin123"
+  "email": "<ADMIN_EMAIL>",
+  "password": "<ADMIN_PASSWORD>"
 }
 ```
 
@@ -163,7 +169,7 @@ Check that the seeded admin item exists with:
 
 - `PK = USER#admin`
 - `SK = PROFILE`
-- `email = admin@nails.com`
+- `email = <ADMIN_EMAIL>`
 - `role = ADMIN`
 
 ## Notes and Caveats

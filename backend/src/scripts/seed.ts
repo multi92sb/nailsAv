@@ -37,9 +37,6 @@ function getWorkingDates(count: number): string[] {
  * Create admin if not exists
  */
 async function seedAdmin() {
-  const email = process.env.ADMIN_EMAIL ?? 'admin@nails.com';
-  const password = process.env.ADMIN_PASSWORD ?? 'admin123';
-
   const existing = await docClient.send(
     new GetCommand({
       TableName: TABLE_NAME,
@@ -53,6 +50,13 @@ async function seedAdmin() {
   if (existing.Item) {
     console.log('Admin already exists');
     return;
+  }
+
+  // No default password: this repository is public, so the caller must choose one.
+  const email = process.env.ADMIN_EMAIL ?? 'admin@example.com';
+  const password = process.env.ADMIN_PASSWORD;
+  if (!password) {
+    throw new Error('Set ADMIN_PASSWORD (and optionally ADMIN_EMAIL) to seed the admin user.');
   }
 
   const passwordHash = await bcrypt.hash(password, 10);

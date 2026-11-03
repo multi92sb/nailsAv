@@ -17,7 +17,9 @@ node_modules/
 
 # Other
 opencode-config/
+# Internal notes: these describe unpatched weaknesses, so keep them out of a public repo.
 docs/
+PRODUCTION_READINESS.md
 
 # DynamoDB Local
 backend/dynamodb-local/
