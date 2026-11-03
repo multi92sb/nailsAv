@@ -1,4 +1,5 @@
-const isProduction = process.env.APP_STAGE === 'prod';
+/** Every deployed stage is served over HTTPS, so only local offline runs omit Secure. */
+const SECURE_ATTRIBUTE = '; Secure';
 
 export function getCookie(
   event: { headers?: Record<string, string | undefined> },
@@ -29,8 +30,7 @@ export function createCookie(name: string, value: string, maxAgeSeconds: number)
     return `${name}=${encoded}`;
   }
 
-  const secure = isProduction ? '; Secure' : '';
-  return `${name}=${encoded}; HttpOnly; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax${secure}`;
+  return `${name}=${encoded}; HttpOnly; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax${SECURE_ATTRIBUTE}`;
 }
 
 export function clearCookie(name: string): string {
@@ -38,6 +38,5 @@ export function clearCookie(name: string): string {
     return `${name}=`;
   }
 
-  const secure = isProduction ? '; Secure' : '';
-  return `${name}=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax${secure}`;
+  return `${name}=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax${SECURE_ATTRIBUTE}`;
 }

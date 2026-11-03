@@ -70,6 +70,8 @@ export const sr: Record<keyof typeof import('./en').en, string> = {
   ourWorkTitle: 'Naš rad',
   ourWorkSubtitle: 'Izbor naših najnovijih nail art kreacija',
   noPhotosYet: 'Još uvek nema slika — posetite nas ponovo uskoro!',
+  galleryLoadError: 'Nismo uspeli da učitamo galeriju. Pokušajte ponovo.',
+  galleryRetry: 'Pokušaj ponovo',
 
   // My Bookings Page
   myAppointmentsTitle: 'Moji Termini',

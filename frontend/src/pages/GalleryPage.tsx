@@ -1,26 +1,31 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../api/apiClient';
+import { api, type GalleryItem } from '../api/apiClient';
 import { useTranslation } from '../context/LanguageContext';
 import LanguageSelector from '../components/LanguageSelector';
 
-interface MediaItem {
-  key: string;
-  url: string;
-}
-
 export default function GalleryPage() {
-  const [media, setMedia] = useState<MediaItem[]>([]);
+  const [media, setMedia] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
   const { t } = useTranslation();
 
-  useEffect(() => {
+  const loadMedia = useCallback(() => {
+    setLoading(true);
+    setFailed(false);
     api
       .getMedia()
       .then((data) => setMedia(data.media))
-      .catch(console.error)
+      .catch((err) => {
+        console.error(err);
+        setFailed(true);
+      })
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    loadMedia();
+  }, [loadMedia]);
 
   return (
     <div className="min-h-screen bg-rose-50">
@@ -48,15 +53,31 @@ export default function GalleryPage() {
           </div>
         )}
 
-        {!loading && media.length === 0 && (
+        {!loading && failed && (
+          <div
+            role="alert"
+            className="bg-red-50 border border-red-200 text-red-700 px-4 py-6 rounded-lg text-center"
+          >
+            <p>{t('galleryLoadError')}</p>
+            <button
+              type="button"
+              onClick={loadMedia}
+              className="mt-3 px-4 py-2 rounded-lg bg-rose-600 text-white text-sm hover:bg-rose-700 transition"
+            >
+              {t('galleryRetry')}
+            </button>
+          </div>
+        )}
+
+        {!loading && !failed && media.length === 0 && (
           <p className="text-gray-400 text-center py-16">{t('noPhotosYet')}</p>
         )}
 
-        {!loading && media.length > 0 && (
+        {!loading && !failed && media.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {media.map((item) => (
               <div
-                key={item.key}
+                key={item.id}
                 className="aspect-square rounded-xl overflow-hidden bg-gray-100 shadow-sm"
               >
                 <img

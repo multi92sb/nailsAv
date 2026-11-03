@@ -70,6 +70,8 @@ export const en = {
   ourWorkTitle: 'Our Work',
   ourWorkSubtitle: 'A selection of our latest nail art',
   noPhotosYet: 'No photos yet — check back soon!',
+  galleryLoadError: "We couldn't load the gallery. Please try again.",
+  galleryRetry: 'Try again',
 
   // My Bookings Page
   myAppointmentsTitle: 'My Appointments',

@@ -52,11 +52,13 @@ Relevant files:
 
 The seed script creates an admin user if it does not already exist.
 
-Seeded admin credentials:
+**Local development only.** The seed defaults to `admin@nails.com` / `admin123` (see
+`backend/src/scripts/seed.ts`). These credentials are public, so never run the seed against a
+deployed stage. For `stage` and `prod`, create the admin with a strong password instead:
 
-- Email: `admin@nails.com`
-- Password: `admin123`
-- Role: `ADMIN`
+```bash
+ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='<strong password>' npm run admin:reset -- --stage prod
+```
 
 Important behavior:
 

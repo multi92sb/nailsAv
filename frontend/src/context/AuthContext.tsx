@@ -40,7 +40,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     api
       .getMe()
       .then((res) => {
-        if (mounted) setUser(normalizeUser(res.user));
+        if (!mounted) return;
+        setUser(normalizeUser(res.user));
+        setAdminVerified(Boolean(res.adminVerified));
       })
       .catch(() =>
         api
