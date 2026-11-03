@@ -4,21 +4,25 @@ import { GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 
 import { docClient } from '../db/client';
 
-const DEFAULT_ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'admin@nails.com';
-const DEFAULT_ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'admin123';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'admin@example.com';
 const cliArgs = process.argv.slice(2);
 const explicitStage = cliArgs.find((arg) => !arg.startsWith('-'));
 const stage = explicitStage ?? process.env.APP_STAGE ?? 'dev';
 const tableName = explicitStage ? `NailBooking-${stage}` : (process.env.TABLE_NAME ?? `NailBooking-${stage}`);
 
-/** The fallback password is published in the README, so it may only be used locally. */
-if (stage !== 'dev' && !process.env.ADMIN_PASSWORD) {
-  console.error(
-    `Refusing to set the default admin password on stage "${stage}".\n` +
-      "Set ADMIN_PASSWORD (and optionally ADMIN_EMAIL) to a strong value and run again.",
-  );
-  process.exit(1);
+/** No default password: this repository is public, so the caller must choose one. */
+function requireAdminPassword(): string {
+  const password = process.env.ADMIN_PASSWORD;
+  if (!password) {
+    console.error(
+      `Set ADMIN_PASSWORD (and optionally ADMIN_EMAIL) to reset the admin on stage "${stage}".`,
+    );
+    process.exit(1);
+  }
+  return password;
 }
+
+const ADMIN_PASSWORD = requireAdminPassword();
 
 async function resetAdmin(): Promise<void> {
   const existing = await docClient.send(
@@ -31,7 +35,7 @@ async function resetAdmin(): Promise<void> {
     }),
   );
 
-  const passwordHash = await bcrypt.hash(DEFAULT_ADMIN_PASSWORD, 10);
+  const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
   const createdAt = typeof existing.Item?.createdAt === 'string'
     ? existing.Item.createdAt
     : new Date().toISOString();
@@ -43,7 +47,7 @@ async function resetAdmin(): Promise<void> {
         PK: 'USER#admin',
         SK: 'PROFILE',
         userId: 'admin',
-        email: DEFAULT_ADMIN_EMAIL,
+        email: ADMIN_EMAIL,
         password: passwordHash,
         role: 'ADMIN',
         firstName: 'Admin',
@@ -56,12 +60,8 @@ async function resetAdmin(): Promise<void> {
   );
 
   console.log(`Admin credentials reset in ${tableName}`);
-  console.log(`Email: ${DEFAULT_ADMIN_EMAIL}`);
-  console.log(
-    process.env.ADMIN_PASSWORD
-      ? 'Password: (taken from ADMIN_PASSWORD)'
-      : `Password: ${DEFAULT_ADMIN_PASSWORD}`,
-  );
+  console.log(`Email: ${ADMIN_EMAIL}`);
+  console.log('Password: (taken from ADMIN_PASSWORD)');
 }
 
 resetAdmin().catch((err) => {

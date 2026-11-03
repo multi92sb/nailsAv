@@ -15,7 +15,7 @@ function makeEvent(): APIGatewayProxyEventV2WithLambdaAuthorizer<AuthorizerConte
   return {
     requestContext: {
       authorizer: {
-        lambda: { userId: 'admin-1', email: 'admin@nails.com', role: 'ADMIN', tokenType: 'admin' },
+        lambda: { userId: 'admin-1', email: 'admin@example.com', role: 'ADMIN', tokenType: 'admin' },
       },
       http: { sourceIp: '127.0.0.1' },
     },
