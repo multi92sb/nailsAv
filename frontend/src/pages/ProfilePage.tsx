@@ -80,9 +80,9 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-rose-50">
       <header className="bg-white shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+        <div className="max-w-4xl mx-auto px-4 py-4 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
           <span className="text-xl font-bold text-rose-700">{t('appLogo')}</span>
-          <nav className="flex items-center gap-5 text-sm">
+          <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
             <Link to="/home" className="text-gray-600 hover:text-rose-600 transition">
               {t('navHome')}
             </Link>

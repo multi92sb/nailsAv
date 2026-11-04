@@ -230,12 +230,12 @@ export default function AdminSlotsPage() {
   return (
     <div className="min-h-screen bg-rose-50">
       <header className="bg-white shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
           <div className="flex items-center gap-3">
             <span className="text-xl font-bold text-rose-700">{t('adminPanel')}</span>
             <span className="text-sm text-gray-500">{t('navSlots')}</span>
           </div>
-          <nav className="flex items-center gap-5 text-sm">
+          <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
             <Link to="/admin/users" className="text-gray-600 hover:text-rose-600 transition">
               {t('navUsers')}
             </Link>
