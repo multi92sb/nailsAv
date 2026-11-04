@@ -101,6 +101,7 @@ export const en = {
   noBookingsFound: "You haven't made any bookings yet.",
   statusConfirmed: 'Confirmed',
   statusCancelled: 'Cancelled',
+  cancelledAtLabel: 'Cancelled at',
   statusCompleted: 'Completed',
   statusNoShow: 'No-Show',
   cancelButton: 'Cancel Appointment',

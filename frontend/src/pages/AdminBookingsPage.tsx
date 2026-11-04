@@ -540,6 +540,14 @@ export default function AdminBookingsPage() {
                         }`}>
                           {statusLabels[b.status] || b.status}
                         </span>
+                        {b.status === 'CANCELLED' && (b.cancelledAt || b.updatedAt) && (
+                          <span className="mt-1 block text-[9px] text-zinc-400">
+                            {t('cancelledAtLabel')}{' '}
+                            {new Date((b.cancelledAt || b.updatedAt) as string).toLocaleString(
+                              language === 'sr' ? 'sr-Latn-RS' : 'en-US',
+                            )}
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-gray-500">
                         {new Date(b.createdAt).toLocaleString(language === 'sr' ? 'sr-Latn-RS' : 'en-US')}

@@ -101,6 +101,7 @@ export const sr: Record<keyof typeof import('./en').en, string> = {
   noBookingsFound: 'Još uvek niste napravili nijednu rezervaciju.',
   statusConfirmed: 'Potvrđeno',
   statusCancelled: 'Otkazano',
+  cancelledAtLabel: 'Otkazano',
   statusCompleted: 'Završeno',
   statusNoShow: 'Nije došao/la',
   cancelButton: 'Otkaži termin',

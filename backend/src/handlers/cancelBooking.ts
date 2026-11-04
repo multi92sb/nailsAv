@@ -1,6 +1,7 @@
 import type { APIGatewayProxyHandlerV2WithLambdaAuthorizer } from 'aws-lambda';
 import { z } from 'zod';
 import { BookingRepository } from '../db/repositories/bookingRepository';
+import { AuditRepository } from '../db/repositories/auditRepository';
 import { badRequest, forbidden, notFound, ok, serverError } from '../utils/response';
 import type { AuthorizerContext } from '../types/auth';
 
@@ -37,6 +38,13 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
     }
 
     await BookingRepository.cancelBooking(userId, bookingId, booking.date, booking.time, booking.slotId);
+    await AuditRepository.record({
+      actorUserId: userId,
+      action: 'CANCEL_BOOKING',
+      targetId: bookingId,
+      details: { userId, date: booking.date, time: booking.time },
+      createdAt: new Date().toISOString(),
+    });
 
     return ok({ bookingId, status: 'CANCELLED' });
   } catch (err) {

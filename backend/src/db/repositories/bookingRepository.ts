@@ -13,6 +13,7 @@ export interface Booking {
   status: 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW';
   createdAt: string;
   updatedAt?: string;
+  cancelledAt?: string;
   bookingDate?: string;
   bookingTimeSlot?: string;
   serviceId?: string;
@@ -125,7 +126,7 @@ export const BookingRepository = {
                 PK: bookingPK(userId),
                 SK: bookingSK(bookingId),
               },
-              UpdateExpression: 'SET #status = :cancelled, updatedAt = :now',
+              UpdateExpression: 'SET #status = :cancelled, updatedAt = :now, cancelledAt = :now',
               ExpressionAttributeNames: {
                 '#status': 'status',
               },

@@ -76,6 +76,8 @@ export interface AdminBooking {
   slotId: string;
   status: string;
   createdAt: string;
+  updatedAt?: string;
+  cancelledAt?: string;
   serviceId?: string;
   referenceImageKey?: string;
   styleTags?: string[];

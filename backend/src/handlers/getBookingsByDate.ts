@@ -32,6 +32,8 @@ export const handler: APIGatewayProxyHandlerV2WithLambdaAuthorizer<AuthorizerCon
       slotId: item.slotId,
       status: item.status,
       createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+      cancelledAt: item.cancelledAt,
       serviceId: item.serviceId,
       referenceImageKey: item.referenceImageKey,
       styleTags: item.styleTags ?? [],
