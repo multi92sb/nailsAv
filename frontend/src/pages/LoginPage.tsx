@@ -24,7 +24,7 @@ export default function LoginPage() {
     try {
       const { user } = await api.login(form);
       login(user);
-      navigate(user.role === 'ADMIN' ? '/admin/bookings' : '/home');
+      navigate(user.role === 'ADMIN' ? '/admin' : '/home');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {

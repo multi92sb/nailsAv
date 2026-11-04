@@ -95,7 +95,7 @@ export default function BookingPage() {
   const activeStep = selectedSlot ? 3 : selectedDate ? 2 : 1;
   const dateLabel = selectedDate
     ? new Date(`${selectedDate}T00:00:00`).toLocaleDateString(
-        language === 'sr' ? 'sr-RS' : 'en-US',
+        language === 'sr' ? 'sr-Latn-RS' : 'en-US',
         { weekday: 'long', month: 'long', day: 'numeric' },
       )
     : null;

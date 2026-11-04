@@ -102,7 +102,7 @@ export default function AdminUsersPage() {
                       </span>
                     </td>
                     <td className="px-5 py-4 text-zinc-500">
-                      {new Date(user.createdAt).toLocaleString(language === 'sr' ? 'sr-RS' : 'en-US')}
+                      {new Date(user.createdAt).toLocaleString(language === 'sr' ? 'sr-Latn-RS' : 'en-US')}
                     </td>
                   </tr>
                 ))}

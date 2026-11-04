@@ -23,7 +23,7 @@ function toDateStr(year: number, month: number, day: number): string {
 }
 
 function monthLabel(monthCursor: Date, language: string): string {
-  return monthCursor.toLocaleString(language === 'sr' ? 'sr-RS' : 'en-US', { month: 'long', year: 'numeric' });
+  return monthCursor.toLocaleString(language === 'sr' ? 'sr-Latn-RS' : 'en-US', { month: 'long', year: 'numeric' });
 }
 
 function buildCalendarCells(monthCursor: Date): Array<{ date: string | null; day: number | null }> {
@@ -542,7 +542,7 @@ export default function AdminBookingsPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-gray-500">
-                        {new Date(b.createdAt).toLocaleString(language === 'sr' ? 'sr-RS' : 'en-US')}
+                        {new Date(b.createdAt).toLocaleString(language === 'sr' ? 'sr-Latn-RS' : 'en-US')}
                       </td>
                       <td className="px-4 py-3 text-right space-x-1.5 whitespace-nowrap">
                         {b.status === 'CONFIRMED' && (

@@ -25,16 +25,18 @@ export default function SiteHeader({ current }: { current?: CurrentPage }) {
         <Brand />
         <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] sm:justify-end">
           {user?.role === 'ADMIN' && (
-            <Link to="/admin/bookings" className="font-bold text-coral transition hover:text-red-700">
+            <Link to="/admin" className="font-bold text-coral transition hover:text-red-700">
               {t('adminPanel')}
             </Link>
           )}
           <Link to="/home" className={linkClass(current === 'home')}>
             {t('navHome')}
           </Link>
-          <Link to="/book" className={linkClass(false)}>
-            {t('bookAppointment')}
-          </Link>
+          {user?.role !== 'ADMIN' && (
+            <Link to="/book" className={linkClass(false)}>
+              {t('bookAppointment')}
+            </Link>
+          )}
           <Link to="/gallery" className={linkClass(current === 'gallery')}>
             {t('navGallery')}
           </Link>

@@ -23,7 +23,7 @@ export default function AdminLoginPage() {
     try {
       const res = await api.adminLogin({ email, password });
       loginAdmin(res.user);
-      navigate('/admin/bookings');
+      navigate('/admin');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Admin login failed');
     } finally {

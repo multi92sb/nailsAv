@@ -12,10 +12,11 @@ export const sr: Record<keyof typeof import('./en').en, string> = {
   navAdminPanel: 'Admin Panel',
   backToHome: '← Nazad na Početnu',
   adminPanel: 'Admin Panel',
+  adminOverview: 'Pregled',
   loading: 'Učitavanje…',
 
   // Brand & Auth Pages
-  brandEyebrow: 'Nail atelier · Beograd',
+  brandEyebrow: 'Nail atelier · Sokobanja',
   brandTitle: 'Nokti koji',
   brandTitleAccent: 'izgledaju kao ti.',
   brandSubtitle: 'Miran luksuz, pažljiv detalj i malo vremena samo za vas.',

@@ -57,13 +57,17 @@ export default function AdminLayout() {
     <div className="min-h-screen bg-studio text-studio-ink lg:grid lg:grid-cols-[236px_minmax(0,1fr)]">
       <aside className="hidden border-r border-studio-line bg-white px-4 py-7 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col">
         <div className="px-2">
-          <Brand to="/admin/bookings" compact />
+          <Brand to="/admin" compact />
           <p className="mt-1.5 text-[9px] font-extrabold uppercase tracking-[0.16em] text-zinc-400">
             {t('adminPanel')}
           </p>
         </div>
 
         <nav className="mt-8 grid gap-1">
+          <NavLink to="/admin" end className={navClass}>
+            <Icon name="home" />
+            {t('adminOverview')}
+          </NavLink>
           <NavLink to="/admin/bookings" className={navClass}>
             <Icon name="bookings" />
             {t('navBookings')}
@@ -75,10 +79,6 @@ export default function AdminLayout() {
           <NavLink to="/admin/users" className={navClass}>
             <Icon name="users" />
             {t('navUsers')}
-          </NavLink>
-          <NavLink to="/home" className={navClass}>
-            <Icon name="home" />
-            {t('navHome')}
           </NavLink>
         </nav>
 
@@ -109,7 +109,7 @@ export default function AdminLayout() {
 
       <div className="min-w-0">
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-studio-line bg-white/90 px-4 py-3 backdrop-blur-md lg:hidden">
-          <Brand to="/admin/bookings" compact />
+          <Brand to="/admin" compact />
           <div className="flex items-center gap-2">
             <LanguageSelector />
             <button
@@ -129,14 +129,15 @@ export default function AdminLayout() {
 
       <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-studio-line bg-white/95 px-2 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md lg:hidden">
         {[
+          { to: '/admin', label: t('adminOverview'), icon: 'home' as const },
           { to: '/admin/bookings', label: t('navBookings'), icon: 'bookings' as const },
           { to: '/admin/slots', label: t('navSlots'), icon: 'slots' as const },
           { to: '/admin/users', label: t('navUsers'), icon: 'users' as const },
-          { to: '/home', label: t('navHome'), icon: 'home' as const },
         ].map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
+            end={item.to === '/admin'}
             className={({ isActive }) =>
               `flex flex-col items-center gap-1 rounded-lg py-1.5 text-[9px] font-bold transition ${
                 isActive ? 'text-coral' : 'text-zinc-400'

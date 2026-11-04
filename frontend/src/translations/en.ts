@@ -12,10 +12,11 @@ export const en = {
   navAdminPanel: 'Admin Panel',
   backToHome: '← Back to Home',
   adminPanel: 'Admin Panel',
+  adminOverview: 'Overview',
   loading: 'Loading…',
 
   // Brand & Auth Pages
-  brandEyebrow: 'Nail atelier · Belgrade',
+  brandEyebrow: 'Nail atelier · Sokobanja',
   brandTitle: 'Nails that',
   brandTitleAccent: 'feel like you.',
   brandSubtitle: 'Quiet luxury, thoughtful detail and a little time just for yourself.',

@@ -47,7 +47,7 @@ export default function AuthShell({ children }: { children: ReactNode }) {
         </div>
 
         <div className="relative z-10 flex items-center justify-between text-[9px] font-bold uppercase tracking-[0.16em] text-ivory/45">
-          <span>Belgrade · RS</span>
+          <span>Sokobanja · RS</span>
           <span>Est. 2026</span>
         </div>
       </aside>

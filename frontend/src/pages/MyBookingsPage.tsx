@@ -7,7 +7,7 @@ import SiteHeader from '../components/SiteHeader';
 
 function formatDate(dateStr: string, language: string): string {
   const d = new Date(`${dateStr}T00:00:00`);
-  return d.toLocaleDateString(language === 'sr' ? 'sr-RS' : 'en-US', {
+  return d.toLocaleDateString(language === 'sr' ? 'sr-Latn-RS' : 'en-US', {
     weekday: 'short',
     month: 'short',
     day: 'numeric',

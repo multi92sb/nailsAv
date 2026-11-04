@@ -13,6 +13,7 @@ import ConfirmationPage from './pages/ConfirmationPage';
 import GalleryPage from './pages/GalleryPage';
 
 import AdminUsersPage from './pages/AdminUsersPage';
+import AdminOverviewPage from './pages/AdminOverviewPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminBookingsPage from './pages/AdminBookingsPage';
 import AdminSlotsPage from './pages/AdminSlotsPage';
@@ -43,6 +44,7 @@ export default function App() {
             {/* ADMIN PROTECTED */}
             <Route element={<AdminRoute />}>
               <Route element={<AdminLayout />}>
+                <Route path="/admin" element={<AdminOverviewPage />} />
                 <Route path="/admin/users" element={<AdminUsersPage />} />
                 <Route path="/admin/bookings" element={<AdminBookingsPage />} />
                 <Route path="/admin/slots" element={<AdminSlotsPage />} />
