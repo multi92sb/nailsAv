@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api } from '../api/apiClient';
+import { api, type AdminLoyaltyUser } from '../api/apiClient';
 import { useTranslation } from '../context/LanguageContext';
 
 interface AdminUser {
@@ -16,6 +16,7 @@ export default function AdminUsersPage() {
   const { t, language } = useTranslation();
 
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [loyaltyByUser, setLoyaltyByUser] = useState<Record<string, AdminLoyaltyUser>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
@@ -24,8 +25,11 @@ export default function AdminUsersPage() {
     try {
       setError(null);
       setLoading(true);
-      const res = await api.getUsers();
+      const [res, loyaltyRes] = await Promise.all([api.getUsers(), api.getAdminLoyalty()]);
       setUsers(res.users);
+      setLoyaltyByUser(
+        Object.fromEntries(loyaltyRes.users.map((entry) => [entry.userId, entry])),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load users');
     } finally {
@@ -41,7 +45,11 @@ export default function AdminUsersPage() {
     if (!window.confirm(t('loyaltyRedeemConfirm'))) return;
     setRedeemingId(userId);
     try {
-      await api.adminRedeemLoyalty(userId);
+      const res = await api.adminRedeemLoyalty(userId);
+      setLoyaltyByUser((prev) => ({
+        ...prev,
+        [userId]: { ...prev[userId], ...res.loyalty },
+      }));
       window.alert(t('loyaltyRedeemSuccess'));
     } catch {
       window.alert(t('loyaltyRedeemNone'));
@@ -98,43 +106,68 @@ export default function AdminUsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {users.map((user) => (
-                  <tr key={user.userId} className="border-t border-studio-line/80">
-                    <td className="px-5 py-4 font-semibold text-zinc-800">
-                      {user.firstName} {user.lastName}
-                    </td>
-                    <td className="px-5 py-4 text-zinc-600">{user.email}</td>
-                    <td className="px-5 py-4 text-zinc-600">{user.phone}</td>
-                    <td className="px-5 py-4">
-                      <span
-                        className={`rounded-full px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.08em] ${
-                          user.role === 'ADMIN'
-                            ? 'bg-[#FFF1F3] text-coral'
-                            : 'bg-zinc-100 text-zinc-500'
-                        }`}
-                      >
-                        {user.role}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 text-zinc-500">
-                      {new Date(user.createdAt).toLocaleString(language === 'sr' ? 'sr-Latn-RS' : 'en-US')}
-                    </td>
-                    <td className="px-5 py-4 text-right">
-                      {user.role === 'USER' ? (
-                        <button
-                          type="button"
-                          onClick={() => handleRedeemLoyalty(user.userId)}
-                          disabled={redeemingId === user.userId}
-                          className="rounded-full border border-rose-200 px-3 py-1.5 text-[9px] font-extrabold text-coral transition hover:bg-[#FFF1F3] disabled:opacity-50"
+                {users.map((user) => {
+                  const loyalty = loyaltyByUser[user.userId];
+                  return (
+                    <tr key={user.userId} className="border-t border-studio-line/80">
+                      <td className="px-5 py-4 font-semibold text-zinc-800">
+                        {user.firstName} {user.lastName}
+                      </td>
+                      <td className="px-5 py-4 text-zinc-600">{user.email}</td>
+                      <td className="px-5 py-4 text-zinc-600">{user.phone}</td>
+                      <td className="px-5 py-4">
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.08em] ${
+                            user.role === 'ADMIN'
+                              ? 'bg-[#FFF1F3] text-coral'
+                              : 'bg-zinc-100 text-zinc-500'
+                          }`}
                         >
-                          {redeemingId === user.userId ? '…' : t('loyaltyRedeemButton')}
-                        </button>
-                      ) : (
-                        <span className="text-[9px] text-zinc-300">—</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                          {user.role}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 text-zinc-500">
+                        {new Date(user.createdAt).toLocaleString(language === 'sr' ? 'sr-Latn-RS' : 'en-US')}
+                      </td>
+                      <td className="min-w-[190px] px-5 py-4">
+                        {user.role === 'USER' && loyalty ? (
+                          <div className="flex items-center gap-3">
+                            <div>
+                              <div className="flex w-24 gap-1" aria-hidden="true">
+                                {Array.from({ length: loyalty.visitsRequired }).map((_, index) => (
+                                  <span
+                                    key={index}
+                                    className={`h-1.5 flex-1 rounded-full ${
+                                      index < (loyalty.rewardsAvailable > 0 ? loyalty.visitsRequired : loyalty.progress)
+                                        ? 'bg-brand-400'
+                                        : 'bg-zinc-200'
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                              <p className="mt-1 text-[9px] font-semibold text-zinc-400">
+                                {loyalty.progress} / {loyalty.visitsRequired} ·{' '}
+                                {t('loyaltyTotalVisits', { count: loyalty.completedVisits })}
+                              </p>
+                            </div>
+                            {loyalty.rewardsAvailable > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => handleRedeemLoyalty(user.userId)}
+                                disabled={redeemingId === user.userId}
+                                className="shrink-0 rounded-full border border-rose-200 px-3 py-1.5 text-[8px] font-extrabold text-coral transition hover:bg-[#FFF1F3] disabled:opacity-50"
+                              >
+                                {redeemingId === user.userId ? '…' : t('loyaltyRedeemButton')}
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-[9px] text-zinc-300">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

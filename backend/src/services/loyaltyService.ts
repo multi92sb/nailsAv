@@ -44,3 +44,41 @@ export async function getLoyaltyStatus(userId: string): Promise<LoyaltyStatus> {
   const completedVisits = bookings.filter((booking) => booking.status === 'COMPLETED').length;
   return calculateLoyalty(completedVisits, user?.loyaltyRedeemedCount ?? 0);
 }
+
+export interface LoyaltyOverviewRow extends LoyaltyStatus {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
+export async function getLoyaltyOverview(): Promise<LoyaltyOverviewRow[]> {
+  const [users, completedBookings] = await Promise.all([
+    UserRepository.scanAll(),
+    BookingRepository.scanCompletedBookings(),
+  ]);
+
+  const completedByUser = new Map<string, number>();
+  for (const booking of completedBookings) {
+    completedByUser.set(booking.userId, (completedByUser.get(booking.userId) ?? 0) + 1);
+  }
+
+  return users
+    .filter((user) => user.role === 'USER')
+    .map((user) => ({
+      userId: user.userId,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      ...calculateLoyalty(
+        completedByUser.get(user.userId) ?? 0,
+        user.loyaltyRedeemedCount ?? 0,
+      ),
+    }))
+    .sort(
+      (a, b) =>
+        b.rewardsAvailable - a.rewardsAvailable ||
+        b.completedVisits - a.completedVisits ||
+        a.lastName.localeCompare(b.lastName),
+    );
+}

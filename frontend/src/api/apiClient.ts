@@ -115,6 +115,13 @@ export interface LoyaltyStatus {
   nextRewardIn: number;
 }
 
+export interface AdminLoyaltyUser extends LoyaltyStatus {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
 export interface GalleryItem {
   id: string;
   key?: string;
@@ -234,6 +241,9 @@ export const api = {
     request<{ user: UserProfile }>('/me', { method: 'PATCH', body, auth: true }),
 
   getLoyalty: () => request<{ loyalty: LoyaltyStatus }>('/loyalty', { auth: true }),
+
+  getAdminLoyalty: () =>
+    request<{ users: AdminLoyaltyUser[] }>('/admin/loyalty', { auth: true }),
 
   adminRedeemLoyalty: (userId: string) =>
     request<{ userId: string; loyalty: LoyaltyStatus }>('/admin/loyalty/redeem', {

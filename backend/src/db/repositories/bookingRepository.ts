@@ -251,6 +251,23 @@ export const BookingRepository = {
     );
   },
 
+  async scanCompletedBookings(): Promise<Booking[]> {
+    const result = await docClient.send(
+      new ScanCommand({
+        TableName: TABLE_NAME,
+        FilterExpression: 'entityType = :type AND #status = :status',
+        ExpressionAttributeNames: {
+          '#status': 'status',
+        },
+        ExpressionAttributeValues: {
+          ':type': 'BOOKING',
+          ':status': 'COMPLETED',
+        },
+      }),
+    );
+    return (result.Items ?? []) as Booking[];
+  },
+
   async scanBookingsForReminder(dateStr: string): Promise<Booking[]> {
     const result = await docClient.send(
       new ScanCommand({
