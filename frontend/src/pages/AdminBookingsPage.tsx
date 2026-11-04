@@ -285,30 +285,32 @@ export default function AdminBookingsPage() {
         </div>
 
         <section className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between gap-2 mb-4">
             <button
               type="button"
               onClick={() =>
                 setMonthCursor((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))
               }
-              className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm text-gray-700 hover:bg-gray-50"
+              className="px-2 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-700 hover:bg-gray-50 sm:px-3 sm:text-sm"
             >
               {t('prev')}
             </button>
-            <h2 className="text-lg font-semibold text-gray-800 capitalize">{monthLabel(monthCursor, language)}</h2>
+            <h2 className="text-center text-base font-semibold text-gray-800 capitalize sm:text-lg">
+              {monthLabel(monthCursor, language)}
+            </h2>
             <button
               type="button"
               onClick={() =>
                 setMonthCursor((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))
               }
-              className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm text-gray-700 hover:bg-gray-50"
+              className="px-2 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-700 hover:bg-gray-50 sm:px-3 sm:text-sm"
             >
               {t('next')}
             </button>
           </div>
 
           <div className="overflow-x-auto pb-2">
-            <div className="min-w-[720px]">
+            <div className="sm:min-w-[720px]">
               <div className="grid grid-cols-7 gap-2 mb-2">
                 {WEEK_DAYS.map((dayName) => (
                   <div key={dayName} className="text-xs font-semibold text-gray-500 text-center py-1">
@@ -348,7 +350,7 @@ export default function AdminBookingsPage() {
                   onMouseLeave={() => {
                     setHoveredDate((current) => (current === cellDate ? null : current));
                   }}
-                  className={`relative h-20 rounded-lg border p-2 text-left transition ${
+                  className={`relative h-14 rounded-lg border p-1 text-left transition sm:h-20 sm:p-2 ${
                     isSelected
                       ? 'border-rose-500 bg-rose-50'
                       : 'border-gray-200 bg-white hover:border-rose-300 hover:bg-rose-50/40'
@@ -357,19 +359,29 @@ export default function AdminBookingsPage() {
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-sm font-semibold text-gray-800">{cell.day}</span>
                     {isToday && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 whitespace-nowrap">
-                        {t('todayLabel')}
-                      </span>
+                      <>
+                        <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-rose-500 sm:hidden" />
+                        <span className="hidden text-[10px] px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 whitespace-nowrap sm:inline">
+                          {t('todayLabel')}
+                        </span>
+                      </>
                     )}
                   </div>
                   {isClosedDay && (
-                    <div className="mt-2 text-[11px] font-medium text-gray-500">{t('closedLabel')}</div>
+                    <div className="mt-2 hidden text-[11px] font-medium text-gray-500 sm:block">{t('closedLabel')}</div>
                   )}
                   {slots.length > 0 && (
-                    <div className="mt-2 text-[11px] leading-4 text-gray-600">
-                      <div className="text-emerald-700">{t('slotsFree', { count: freeCount })}</div>
-                      <div className="text-rose-700">{t('slotsUsed', { count: usedCount })}</div>
-                    </div>
+                    <>
+                      <div className="mt-1 flex items-center gap-1 text-[10px] font-medium leading-none sm:hidden">
+                        <span className="text-emerald-700">{freeCount}</span>
+                        <span className="text-gray-300">/</span>
+                        <span className="text-rose-700">{usedCount}</span>
+                      </div>
+                      <div className="mt-2 hidden text-[11px] leading-4 text-gray-600 sm:block">
+                        <div className="text-emerald-700">{t('slotsFree', { count: freeCount })}</div>
+                        <div className="text-rose-700">{t('slotsUsed', { count: usedCount })}</div>
+                      </div>
+                    </>
                   )}
 
                   {showTooltip && (
