@@ -12,6 +12,57 @@ interface AdminUser {
   role: 'USER' | 'ADMIN';
 }
 
+function LoyaltyDisplay({
+  loyalty,
+  userId,
+  redeemingId,
+  onRedeem,
+}: {
+  loyalty?: AdminLoyaltyUser;
+  userId: string;
+  redeemingId: string | null;
+  onRedeem: (userId: string) => void;
+}) {
+  const { t } = useTranslation();
+
+  if (!loyalty) {
+    return <span className="text-[9px] text-zinc-300">—</span>;
+  }
+
+  const filled = loyalty.rewardsAvailable > 0 ? loyalty.visitsRequired : loyalty.progress;
+
+  return (
+    <div className="flex items-center gap-3">
+      <div className="min-w-0 flex-1">
+        <div className="flex max-w-32 gap-1" aria-hidden="true">
+          {Array.from({ length: loyalty.visitsRequired }).map((_, index) => (
+            <span
+              key={index}
+              className={`h-1.5 flex-1 rounded-full ${
+                index < filled ? 'bg-brand-400' : 'bg-zinc-200'
+              }`}
+            />
+          ))}
+        </div>
+        <p className="mt-1.5 text-[9px] font-semibold text-zinc-400">
+          {loyalty.progress} / {loyalty.visitsRequired} ·{' '}
+          {t('loyaltyTotalVisits', { count: loyalty.completedVisits })}
+        </p>
+      </div>
+      {loyalty.rewardsAvailable > 0 && (
+        <button
+          type="button"
+          onClick={() => onRedeem(userId)}
+          disabled={redeemingId === userId}
+          className="shrink-0 rounded-full border border-rose-200 px-3 py-1.5 text-[8px] font-extrabold text-coral transition hover:bg-[#FFF1F3] disabled:opacity-50"
+        >
+          {redeemingId === userId ? '…' : t('loyaltyRedeemButton')}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function AdminUsersPage() {
   const { t, language } = useTranslation();
 
@@ -75,7 +126,7 @@ export default function AdminUsersPage() {
         <button
           type="button"
           onClick={loadUsers}
-          className="rounded-lg bg-coral px-4 py-2.5 text-[10px] font-extrabold text-white shadow-[0_8px_18px_rgba(225,29,72,.2)] transition hover:bg-red-700"
+          className="self-start rounded-lg bg-coral px-4 py-2.5 text-[10px] font-extrabold text-white shadow-[0_8px_18px_rgba(225,29,72,.2)] transition hover:bg-red-700 sm:self-end"
         >
           {t('refresh')}
         </button>
@@ -93,7 +144,48 @@ export default function AdminUsersPage() {
 
       {!loading && !error && users.length > 0 && (
         <div className="admin-card overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="divide-y divide-studio-line/80 md:hidden">
+            {users.map((user) => {
+              const loyalty = loyaltyByUser[user.userId];
+              return (
+                <div key={user.userId} className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-bold text-zinc-800">
+                        {user.firstName} {user.lastName}
+                      </p>
+                      <p className="mt-1 truncate text-[10px] text-zinc-500">{user.email}</p>
+                      <p className="mt-1 text-[9px] text-zinc-400">{user.phone}</p>
+                    </div>
+                    <span
+                      className={`shrink-0 rounded-full px-2.5 py-1 text-[8px] font-extrabold uppercase tracking-[0.08em] ${
+                        user.role === 'ADMIN'
+                          ? 'bg-[#FFF1F3] text-coral'
+                          : 'bg-zinc-100 text-zinc-500'
+                      }`}
+                    >
+                      {user.role}
+                    </span>
+                  </div>
+                  {user.role === 'USER' && (
+                    <div className="mt-3 rounded-xl bg-zinc-50 px-3 py-2.5">
+                      <p className="mb-2 text-[8px] font-extrabold uppercase tracking-[0.12em] text-zinc-400">
+                        {t('loyaltyAdminColumn')}
+                      </p>
+                      <LoyaltyDisplay
+                        loyalty={loyalty}
+                        userId={user.userId}
+                        redeemingId={redeemingId}
+                        onRedeem={handleRedeemLoyalty}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-sm">
               <thead className="bg-zinc-50 text-left text-[9px] font-extrabold uppercase tracking-[0.1em] text-zinc-400">
                 <tr>
@@ -130,37 +222,13 @@ export default function AdminUsersPage() {
                         {new Date(user.createdAt).toLocaleString(language === 'sr' ? 'sr-Latn-RS' : 'en-US')}
                       </td>
                       <td className="min-w-[190px] px-5 py-4">
-                        {user.role === 'USER' && loyalty ? (
-                          <div className="flex items-center gap-3">
-                            <div>
-                              <div className="flex w-24 gap-1" aria-hidden="true">
-                                {Array.from({ length: loyalty.visitsRequired }).map((_, index) => (
-                                  <span
-                                    key={index}
-                                    className={`h-1.5 flex-1 rounded-full ${
-                                      index < (loyalty.rewardsAvailable > 0 ? loyalty.visitsRequired : loyalty.progress)
-                                        ? 'bg-brand-400'
-                                        : 'bg-zinc-200'
-                                    }`}
-                                  />
-                                ))}
-                              </div>
-                              <p className="mt-1 text-[9px] font-semibold text-zinc-400">
-                                {loyalty.progress} / {loyalty.visitsRequired} ·{' '}
-                                {t('loyaltyTotalVisits', { count: loyalty.completedVisits })}
-                              </p>
-                            </div>
-                            {loyalty.rewardsAvailable > 0 && (
-                              <button
-                                type="button"
-                                onClick={() => handleRedeemLoyalty(user.userId)}
-                                disabled={redeemingId === user.userId}
-                                className="shrink-0 rounded-full border border-rose-200 px-3 py-1.5 text-[8px] font-extrabold text-coral transition hover:bg-[#FFF1F3] disabled:opacity-50"
-                              >
-                                {redeemingId === user.userId ? '…' : t('loyaltyRedeemButton')}
-                              </button>
-                            )}
-                          </div>
+                        {user.role === 'USER' ? (
+                          <LoyaltyDisplay
+                            loyalty={loyalty}
+                            userId={user.userId}
+                            redeemingId={redeemingId}
+                            onRedeem={handleRedeemLoyalty}
+                          />
                         ) : (
                           <span className="text-[9px] text-zinc-300">—</span>
                         )}
