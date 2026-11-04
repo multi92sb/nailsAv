@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
 import { api, type GalleryItem } from '../api/apiClient';
 import { useTranslation } from '../context/LanguageContext';
-import LanguageSelector from '../components/LanguageSelector';
+import SiteHeader from '../components/SiteHeader';
 
 export default function GalleryPage() {
   const [media, setMedia] = useState<GalleryItem[]>([]);
@@ -28,65 +27,72 @@ export default function GalleryPage() {
   }, [loadMedia]);
 
   return (
-    <div className="min-h-screen bg-rose-50">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
-          <span className="text-xl font-bold text-rose-700">{t('appLogo')}</span>
-          <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-            <Link to="/home" className="text-gray-600 hover:text-rose-600 transition">
-              {t('backToHome')}
-            </Link>
-            <LanguageSelector />
-          </nav>
-        </div>
-      </header>
+    <div className="min-h-screen bg-ivory">
+      <SiteHeader current="gallery" />
 
-      <main className="max-w-4xl mx-auto px-4 py-10">
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">{t('ourWorkTitle')}</h2>
-        <p className="text-gray-400 text-sm mb-8">{t('ourWorkSubtitle')}</p>
+      <main className="mx-auto max-w-6xl px-5 py-10 sm:px-8 lg:py-16">
+        <div className="flex flex-col gap-5 border-b border-line pb-8 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="eyebrow">{t('navGallery')}</p>
+            <h1 className="mt-3 font-serif text-4xl font-medium tracking-[-0.04em] text-espresso sm:text-6xl">
+              {t('ourWorkTitle')}
+            </h1>
+            <p className="mt-3 max-w-md text-sm leading-7 text-muted">{t('ourWorkSubtitle')}</p>
+          </div>
+          {!loading && !failed && media.length > 0 && (
+            <span className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-muted/55">
+              {media.length.toString().padStart(2, '0')} {t('navGallery')}
+            </span>
+          )}
+        </div>
 
         {loading && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="aspect-square rounded-xl bg-gray-200 animate-pulse" />
+              <div
+                key={i}
+                className={`animate-pulse rounded-3xl bg-cream ${i % 3 === 0 ? 'aspect-[4/5]' : 'aspect-square'}`}
+              />
             ))}
           </div>
         )}
 
         {!loading && failed && (
-          <div
-            role="alert"
-            className="bg-red-50 border border-red-200 text-red-700 px-4 py-6 rounded-lg text-center"
-          >
-            <p>{t('galleryLoadError')}</p>
-            <button
-              type="button"
-              onClick={loadMedia}
-              className="mt-3 px-4 py-2 rounded-lg bg-rose-600 text-white text-sm hover:bg-rose-700 transition"
-            >
+          <div role="alert" className="mt-8 rounded-[2rem] border border-red-200 bg-red-50 px-6 py-10 text-center text-red-700">
+            <p className="font-serif text-2xl">{t('galleryLoadError')}</p>
+            <button type="button" onClick={loadMedia} className="btn-primary mt-5">
               {t('galleryRetry')}
             </button>
           </div>
         )}
 
         {!loading && !failed && media.length === 0 && (
-          <p className="text-gray-400 text-center py-16">{t('noPhotosYet')}</p>
+          <div className="mt-8 rounded-[2rem] border border-line bg-paper px-6 py-16 text-center">
+            <p className="font-serif text-2xl text-espresso">{t('noPhotosYet')}</p>
+          </div>
         )}
 
         {!loading && !failed && media.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {media.map((item) => (
-              <div
+          <div className="mt-8 columns-2 gap-3 sm:columns-3 sm:gap-4 [&>*]:mb-3 sm:[&>*]:mb-4">
+            {media.map((item, index) => (
+              <figure
                 key={item.id}
-                className="aspect-square rounded-xl overflow-hidden bg-gray-100 shadow-sm"
+                className="group relative break-inside-avoid overflow-hidden rounded-3xl bg-cream"
               >
                 <img
                   src={item.url}
-                  alt="Nail art"
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                  alt={item.caption || 'Nail art'}
+                  className={`w-full object-cover transition duration-700 group-hover:scale-[1.03] ${
+                    index % 5 === 0 ? 'aspect-[4/5]' : index % 3 === 0 ? 'aspect-[5/6]' : 'aspect-square'
+                  }`}
                   loading="lazy"
                 />
-              </div>
+                {item.caption && (
+                  <figcaption className="absolute inset-x-0 bottom-0 translate-y-2 bg-gradient-to-t from-espresso/70 to-transparent px-4 pb-4 pt-10 text-xs font-semibold text-white opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                    {item.caption}
+                  </figcaption>
+                )}
+              </figure>
             ))}
           </div>
         )}

@@ -9,34 +9,27 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({ floating = f
   const { language, setLanguage } = useTranslation();
 
   const containerClasses = floating
-    ? 'fixed top-4 right-4 z-50 bg-white/90 backdrop-blur-sm shadow-md border border-rose-100 rounded-xl p-1 flex gap-0.5 items-center animate-in fade-in slide-in-from-top-3 duration-300'
-    : 'bg-rose-50 border border-rose-100/50 rounded-xl p-1 flex gap-0.5 items-center transition hover:bg-rose-100/20';
+    ? 'fixed right-4 top-4 z-50 flex items-center gap-0.5 rounded-full border border-line bg-paper/90 p-1 shadow-soft backdrop-blur-md'
+    : 'flex items-center gap-0.5 rounded-full border border-line/80 bg-paper/60 p-1';
 
   return (
     <div className={containerClasses}>
-      <button
-        type="button"
-        onClick={() => setLanguage('en')}
-        className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${
-          language === 'en'
-            ? 'bg-rose-600 text-white shadow-sm'
-            : 'text-rose-700/70 hover:text-rose-800 hover:bg-rose-100/40'
-        }`}
-      >
-        EN
-      </button>
-      <button
-        type="button"
-        onClick={() => setLanguage('sr')}
-        className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${
-          language === 'sr'
-            ? 'bg-rose-600 text-white shadow-sm'
-            : 'text-rose-700/70 hover:text-rose-800 hover:bg-rose-100/40'
-        }`}
-      >
-        SR
-      </button>
+      {(['en', 'sr'] as const).map((value) => (
+        <button
+          key={value}
+          type="button"
+          onClick={() => setLanguage(value)}
+          className={`rounded-full px-2.5 py-1.5 text-[9px] font-extrabold tracking-[0.08em] transition ${
+            language === value
+              ? 'bg-brand-400 text-white shadow-sm'
+              : 'text-muted hover:bg-brand-100/60 hover:text-espresso'
+          }`}
+        >
+          {value.toUpperCase()}
+        </button>
+      ))}
     </div>
   );
 };
+
 export default LanguageSelector;

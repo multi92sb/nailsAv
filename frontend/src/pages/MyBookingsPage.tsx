@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { api } from '../api/apiClient';
 import type { MyBooking } from '../api/apiClient';
-import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../context/LanguageContext';
-import LanguageSelector from '../components/LanguageSelector';
+import SiteHeader from '../components/SiteHeader';
 
 function formatDate(dateStr: string, language: string): string {
   const d = new Date(`${dateStr}T00:00:00`);
-  return d.toLocaleDateString(language === 'sr' ? 'sr-RS' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  return d.toLocaleDateString(language === 'sr' ? 'sr-RS' : 'en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
 }
 
 function isPastBooking(date: string): boolean {
@@ -17,8 +20,6 @@ function isPastBooking(date: string): boolean {
 }
 
 export default function MyBookingsPage() {
-  const { logout } = useAuth();
-  const navigate = useNavigate();
   const { t, language } = useTranslation();
 
   const [bookings, setBookings] = useState<MyBooking[]>([]);
@@ -69,82 +70,83 @@ export default function MyBookingsPage() {
   const upcoming = bookings.filter((b) => !isPastBooking(b.date) && b.status !== 'CANCELLED');
   const past = bookings.filter((b) => isPastBooking(b.date) || b.status === 'CANCELLED');
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
   return (
-    <div className="min-h-screen bg-rose-50">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
-          <span className="text-xl font-bold text-rose-700">{t('appLogo')}</span>
-          <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-            <Link to="/home" className="text-gray-600 hover:text-rose-600 transition">
-              {t('navHome')}
-            </Link>
-            <Link to="/profile" className="text-gray-600 hover:text-rose-600 transition">
-              {t('navProfile')}
-            </Link>
-            <LanguageSelector />
-            <button onClick={handleLogout} className="text-gray-500 hover:text-rose-600 transition">
-              {t('navLogout')}
-            </button>
-          </nav>
-        </div>
-      </header>
+    <div className="min-h-screen bg-ivory">
+      <SiteHeader current="bookings" />
 
-      <main className="max-w-4xl mx-auto px-4 py-10">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">{t('myAppointmentsTitle')}</h1>
-          <button
-            onClick={load}
-            className="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
-          >
+      <main className="mx-auto max-w-4xl px-5 py-10 sm:px-8 lg:py-14">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="eyebrow">{t('navMyBookings')}</p>
+            <h1 className="mt-3 font-serif text-4xl font-medium tracking-[-0.04em] text-espresso sm:text-5xl">
+              {t('myAppointmentsTitle')}
+            </h1>
+          </div>
+          <button type="button" onClick={load} className="btn-outline self-start px-5 py-2.5 text-xs">
             {t('refresh')}
           </button>
         </div>
 
-        {loading && <p className="text-gray-600">{t('loadingBookings')}</p>}
+        {loading && (
+          <div className="mt-8 flex items-center gap-3 text-sm text-muted">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-brand-200 border-t-brand-400" />
+            {t('loadingBookings')}
+          </div>
+        )}
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+          <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </div>
         )}
 
         {!loading && bookings.length === 0 && (
-          <div className="bg-white rounded-xl border border-gray-200 p-6 text-center">
-            <p className="text-gray-500 mb-4">{t('noBookingsFound')}</p>
-            <Link
-              to="/book"
-              className="inline-block bg-rose-600 hover:bg-rose-700 text-white font-semibold px-6 py-2 rounded-lg transition"
-            >
-              {t('bookAppointment')}
+          <div className="card mt-8 px-6 py-14 text-center">
+            <span className="font-serif text-4xl text-brand-300">01</span>
+            <p className="mt-4 text-sm text-muted">{t('noBookingsFound')}</p>
+            <Link to="/book" className="btn-primary mt-6">
+              {t('bookAppointment')} <span aria-hidden="true">→</span>
             </Link>
           </div>
         )}
 
         {upcoming.length > 0 && (
-          <section className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-800 mb-3">{t('upcomingBookings')}</h2>
+          <section className="mt-9">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="font-serif text-2xl font-medium tracking-[-0.025em]">
+                {t('upcomingBookings')}
+              </h2>
+              <span className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-muted/50">
+                {upcoming.length.toString().padStart(2, '0')}
+              </span>
+            </div>
             <div className="space-y-3">
               {upcoming.map((b) => (
                 <div
                   key={b.bookingId}
-                  className="bg-white rounded-xl border border-gray-200 p-4 flex items-center justify-between"
+                  className="card flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6"
                 >
-                  <div>
-                    <div className="text-sm text-gray-500">{formatDate(b.date, language)}</div>
-                    <div className="text-lg font-bold text-gray-800">{b.time}</div>
-                    <span className="inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
-                      {statusLabels[b.status] || b.status}
-                    </span>
+                  <div className="flex items-center gap-5">
+                    <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-brand-50 text-center">
+                      <span className="font-serif text-lg font-medium text-brand-700">
+                        {new Date(`${b.date}T00:00:00`).getDate()}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-muted/60">
+                        {formatDate(b.date, language)}
+                      </p>
+                      <p className="mt-1 font-serif text-2xl font-medium text-espresso">{b.time}</p>
+                      <span className="mt-1.5 inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.08em] text-emerald-700">
+                        {statusLabels[b.status] || b.status}
+                      </span>
+                    </div>
                   </div>
                   <button
+                    type="button"
                     onClick={() => setConfirmId(b.bookingId)}
                     disabled={cancellingId === b.bookingId}
-                    className="text-sm text-rose-600 hover:text-rose-700 font-medium px-3 py-1.5 rounded-lg border border-rose-200 hover:bg-rose-50 transition disabled:opacity-50"
+                    className="self-start rounded-full border border-brand-200 px-4 py-2 text-[11px] font-bold text-brand-700 transition hover:bg-brand-50 disabled:opacity-50 sm:self-auto"
                   >
                     {cancellingId === b.bookingId ? t('cancelling') : t('cancelButton')}
                   </button>
@@ -155,21 +157,27 @@ export default function MyBookingsPage() {
         )}
 
         {past.length > 0 && (
-          <section>
-            <h2 className="text-lg font-semibold text-gray-800 mb-3">{t('pastBookings')}</h2>
-            <div className="space-y-3">
+          <section className="mt-10">
+            <h2 className="mb-4 font-serif text-2xl font-medium tracking-[-0.025em]">
+              {t('pastBookings')}
+            </h2>
+            <div className="space-y-2">
               {past.map((b) => (
                 <div
                   key={b.bookingId}
-                  className="bg-white rounded-xl border border-gray-200 p-4 opacity-70"
+                  className="flex items-center justify-between gap-4 rounded-2xl border border-line/70 bg-paper/60 px-4 py-3.5 opacity-75"
                 >
-                  <div className="text-sm text-gray-500">{formatDate(b.date, language)}</div>
-                  <div className="text-lg font-bold text-gray-800">{b.time}</div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted/60">
+                      {formatDate(b.date, language)}
+                    </span>
+                    <span className="text-sm font-bold text-espresso">{b.time}</span>
+                  </div>
                   <span
-                    className={`inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full ${
+                    className={`rounded-full px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.08em] ${
                       b.status === 'CANCELLED'
-                        ? 'bg-gray-200 text-gray-600'
-                        : 'bg-emerald-100 text-emerald-700'
+                        ? 'bg-zinc-100 text-zinc-500'
+                        : 'bg-emerald-50 text-emerald-700'
                     }`}
                   >
                     {statusLabels[b.status] || b.status}
@@ -182,23 +190,24 @@ export default function MyBookingsPage() {
       </main>
 
       {confirmId && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
-            <h3 className="text-lg font-bold text-gray-800 mb-2">{t('cancelModalTitle')}</h3>
-            <p className="text-sm text-gray-500 mb-6">
-              {t('cancelModalBody')}
-            </p>
-            <div className="flex gap-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-espresso/45 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-[2rem] bg-paper p-7 shadow-lift">
+            <p className="eyebrow">{t('cancelModalTitle')}</p>
+            <h3 className="mt-3 font-serif text-2xl font-medium text-espresso">{t('cancelModalTitle')}</h3>
+            <p className="mt-3 text-sm leading-6 text-muted">{t('cancelModalBody')}</p>
+            <div className="mt-7 flex gap-3">
               <button
+                type="button"
                 onClick={() => setConfirmId(null)}
-                className="flex-1 px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition"
+                className="btn-outline flex-1 px-4 py-2.5 text-xs"
               >
                 {t('btnKeep')}
               </button>
               <button
+                type="button"
                 onClick={() => handleCancel(confirmId)}
                 disabled={cancellingId === confirmId}
-                className="flex-1 px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-medium transition disabled:opacity-50"
+                className="flex-1 rounded-full bg-brand-400 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-brand-500 disabled:opacity-50"
               >
                 {cancellingId === confirmId ? t('cancelling') : t('cancelButton')}
               </button>

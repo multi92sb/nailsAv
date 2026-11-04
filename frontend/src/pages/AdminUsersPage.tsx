@@ -1,9 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api/apiClient';
-import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../context/LanguageContext';
-import LanguageSelector from '../components/LanguageSelector';
 
 interface AdminUser {
   userId: string;
@@ -16,8 +13,6 @@ interface AdminUser {
 }
 
 export default function AdminUsersPage() {
-  const { logout } = useAuth();
-  const navigate = useNavigate();
   const { t, language } = useTranslation();
 
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -41,98 +36,81 @@ export default function AdminUsersPage() {
     loadUsers();
   }, []);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
   return (
-    <div className="min-h-screen bg-rose-50">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
-          <div className="flex items-center gap-3">
-            <span className="text-xl font-bold text-rose-700">{t('adminPanel')}</span>
-            <span className="text-sm text-gray-500">{t('navUsers')}</span>
-          </div>
-          <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-            <Link to="/admin/bookings" className="text-gray-600 hover:text-rose-600 transition">
-              {t('navBookings')}
-            </Link>
-            <Link to="/admin/users" className="text-rose-700 font-semibold">
-              {t('navUsers')}
-            </Link>
-            <Link to="/home" className="text-gray-600 hover:text-rose-600 transition">
-              {t('navHome')}
-            </Link>
-            <LanguageSelector />
-            <button
-              onClick={handleLogout}
-              className="text-gray-500 hover:text-rose-600 transition"
-            >
-              {t('navLogout')}
-            </button>
-          </nav>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-[9px] font-extrabold uppercase tracking-[0.18em] text-zinc-400">
+            {t('adminPanel')}
+          </p>
+          <h1 className="mt-1.5 text-2xl font-extrabold tracking-[-0.045em] text-studio-ink sm:text-3xl">
+            {t('registeredUsersTitle')}
+          </h1>
+          <p className="mt-1.5 text-xs text-zinc-500">
+            {loading ? t('loadingUsers') : `${users.length} ${t('navUsers').toLowerCase()}`}
+          </p>
         </div>
-      </header>
+        <button
+          type="button"
+          onClick={loadUsers}
+          className="rounded-lg bg-coral px-4 py-2.5 text-[10px] font-extrabold text-white shadow-[0_8px_18px_rgba(225,29,72,.2)] transition hover:bg-red-700"
+        >
+          {t('refresh')}
+        </button>
+      </div>
 
-      <main className="max-w-6xl mx-auto px-4 py-10">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">{t('registeredUsersTitle')}</h1>
-          <button
-            onClick={loadUsers}
-            className="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
-          >
-            {t('refresh')}
-          </button>
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
         </div>
+      )}
 
-        {loading && <p className="text-gray-600">{t('loadingUsers')}</p>}
+      {!loading && !error && users.length === 0 && (
+        <div className="admin-card p-6 text-sm text-zinc-500">{t('noUsersFound')}</div>
+      )}
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-            {error}
-          </div>
-        )}
-
-        {!loading && !error && users.length === 0 && (
-          <div className="bg-white rounded-xl border border-gray-200 p-6 text-gray-600">
-            {t('noUsersFound')}
-          </div>
-        )}
-
-        {!loading && !error && users.length > 0 && (
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-left text-gray-600">
-                  <tr>
-                    <th className="px-4 py-3 font-semibold">{t('tableUser')}</th>
-                    <th className="px-4 py-3 font-semibold">{t('emailLabel')}</th>
-                    <th className="px-4 py-3 font-semibold">{t('tablePhone')}</th>
-                    <th className="px-4 py-3 font-semibold">{t('tableRole')}</th>
-                    <th className="px-4 py-3 font-semibold">{t('tableCreated')}</th>
+      {!loading && !error && users.length > 0 && (
+        <div className="admin-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-zinc-50 text-left text-[9px] font-extrabold uppercase tracking-[0.1em] text-zinc-400">
+                <tr>
+                  <th className="px-5 py-3.5">{t('tableUser')}</th>
+                  <th className="px-5 py-3.5">{t('emailLabel')}</th>
+                  <th className="px-5 py-3.5">{t('tablePhone')}</th>
+                  <th className="px-5 py-3.5">{t('tableRole')}</th>
+                  <th className="px-5 py-3.5">{t('tableCreated')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((user) => (
+                  <tr key={user.userId} className="border-t border-studio-line/80">
+                    <td className="px-5 py-4 font-semibold text-zinc-800">
+                      {user.firstName} {user.lastName}
+                    </td>
+                    <td className="px-5 py-4 text-zinc-600">{user.email}</td>
+                    <td className="px-5 py-4 text-zinc-600">{user.phone}</td>
+                    <td className="px-5 py-4">
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.08em] ${
+                          user.role === 'ADMIN'
+                            ? 'bg-[#FFF1F3] text-coral'
+                            : 'bg-zinc-100 text-zinc-500'
+                        }`}
+                      >
+                        {user.role}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 text-zinc-500">
+                      {new Date(user.createdAt).toLocaleString(language === 'sr' ? 'sr-RS' : 'en-US')}
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {users.map((user) => (
-                    <tr key={user.userId} className="border-t border-gray-100">
-                      <td className="px-4 py-3 text-gray-800">
-                        {user.firstName} {user.lastName}
-                      </td>
-                      <td className="px-4 py-3 text-gray-700">{user.email}</td>
-                      <td className="px-4 py-3 text-gray-700">{user.phone}</td>
-                      <td className="px-4 py-3 text-gray-700">{user.role}</td>
-                      <td className="px-4 py-3 text-gray-700">
-                        {new Date(user.createdAt).toLocaleString(language === 'sr' ? 'sr-RS' : 'en-US')}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
-        )}
-      </main>
+        </div>
+      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { AuthProvider } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
+import AdminLayout from './components/AdminLayout';
 
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -41,9 +42,11 @@ export default function App() {
 
             {/* ADMIN PROTECTED */}
             <Route element={<AdminRoute />}>
-              <Route path="/admin/users" element={<AdminUsersPage />} />
-              <Route path="/admin/bookings" element={<AdminBookingsPage />} />
-              <Route path="/admin/slots" element={<AdminSlotsPage />} />
+              <Route element={<AdminLayout />}>
+                <Route path="/admin/users" element={<AdminUsersPage />} />
+                <Route path="/admin/bookings" element={<AdminBookingsPage />} />
+                <Route path="/admin/slots" element={<AdminSlotsPage />} />
+              </Route>
             </Route>
           </Route>
 

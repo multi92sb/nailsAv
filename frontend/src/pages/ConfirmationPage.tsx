@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import type { BookingResult } from '../api/apiClient';
 import { useTranslation } from '../context/LanguageContext';
+import Brand from '../components/Brand';
 import LanguageSelector from '../components/LanguageSelector';
 
 function buildGoogleCalendarUrl(booking: BookingResult): string {
@@ -38,55 +39,71 @@ export default function ConfirmationPage() {
   if (!booking) return null;
 
   return (
-    <div className="min-h-screen bg-rose-50 flex items-center justify-center p-4">
-      <LanguageSelector floating />
-      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md text-center">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-          ✓
+    <div className="min-h-screen bg-ivory">
+      <header className="mx-auto flex max-w-3xl items-center justify-between px-5 py-6 sm:px-8">
+        <Brand />
+        <LanguageSelector />
+      </header>
+
+      <main className="mx-auto max-w-lg px-5 py-8 sm:py-12">
+        <div className="relative overflow-hidden rounded-[2rem] border border-line bg-paper px-6 py-9 text-center shadow-lift sm:px-10">
+          <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-brand-100 blur-3xl" />
+          <div className="relative">
+            <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-brand-100 font-serif text-2xl text-brand-700">
+              ✓
+            </span>
+            <p className="eyebrow mt-6">{t('bookingConfirmedTitle')}</p>
+            <h1 className="mt-3 font-serif text-4xl font-medium tracking-[-0.04em] text-espresso">
+              {t('bookingConfirmedTitle')}
+            </h1>
+            <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-muted">
+              {t('bookingConfirmedSubtitle')}
+            </p>
+
+            <div className="mt-8 rounded-2xl border border-line bg-ivory/60 p-5 text-left">
+              <div className="flex items-center justify-between border-b border-line py-3 first:pt-0">
+                <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted/60">
+                  {t('detailsDate')}
+                </span>
+                <span className="font-serif text-lg text-espresso">{booking.date}</span>
+              </div>
+              <div className="flex items-center justify-between border-b border-line py-3">
+                <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted/60">
+                  {t('detailsTime')}
+                </span>
+                <span className="font-serif text-lg text-espresso">{booking.time}</span>
+              </div>
+              <div className="flex items-center justify-between border-b border-line py-3">
+                <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted/60">
+                  {t('tableStatus')}
+                </span>
+                <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.08em] text-emerald-700">
+                  {statusLabels[booking.status] || booking.status}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-4 py-3 pb-0">
+                <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted/60">
+                  {t('detailsId')}
+                </span>
+                <span className="truncate font-mono text-[10px] text-muted">{booking.bookingId}</span>
+              </div>
+            </div>
+
+            <a
+              href={buildGoogleCalendarUrl(booking)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-outline mt-6 w-full"
+            >
+              {t('addToCalendar')}
+            </a>
+
+            <Link to="/home" className="btn-primary mt-3 w-full">
+              {t('goToHomeButton')} <span aria-hidden="true">→</span>
+            </Link>
+          </div>
         </div>
-        <h1 className="text-2xl font-bold text-gray-800 mb-1">{t('bookingConfirmedTitle')}</h1>
-        <p className="text-gray-500 text-sm mb-6">{t('bookingConfirmedSubtitle')}</p>
-
-        <div className="bg-gray-50 rounded-xl p-4 mb-6 text-left space-y-3">
-          <Row label={t('detailsDate')} value={booking.date} />
-          <Row label={t('detailsTime')} value={booking.time} />
-          <Row label={t('tableStatus')} value={statusLabels[booking.status] || booking.status} valueClass="text-green-600 font-semibold" />
-          <Row label={t('detailsId')} value={booking.bookingId} valueClass="font-mono text-xs text-gray-500" />
-        </div>
-
-        <a
-          href={buildGoogleCalendarUrl(booking)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block w-full border border-rose-300 text-rose-600 font-medium py-2.5 rounded-lg hover:bg-rose-50 transition mb-3"
-        >
-          {t('addToCalendar')}
-        </a>
-
-        <Link
-          to="/home"
-          className="block w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-2.5 rounded-lg transition"
-        >
-          {t('goToHomeButton')}
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-function Row({
-  label,
-  value,
-  valueClass = 'font-medium text-gray-800',
-}: {
-  label: string;
-  value: string;
-  valueClass?: string;
-}) {
-  return (
-    <div className="flex justify-between items-center">
-      <span className="text-gray-400 text-sm">{label}</span>
-      <span className={valueClass}>{value}</span>
+      </main>
     </div>
   );
 }

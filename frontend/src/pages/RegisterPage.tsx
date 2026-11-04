@@ -4,7 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../api/apiClient';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../context/LanguageContext';
-import LanguageSelector from '../components/LanguageSelector';
+import AuthShell from '../components/AuthShell';
 
 export default function RegisterPage() {
   const { login } = useAuth();
@@ -39,20 +39,25 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-rose-50 flex items-center justify-center p-4">
-      <LanguageSelector floating />
-      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
-        <h1 className="text-2xl font-bold text-rose-700 mb-1 text-center">{t('signUpTitle')}</h1>
-        <p className="text-gray-400 text-sm text-center mb-6">{t('signUpSubtitle')}</p>
+    <AuthShell>
+      <div className="mb-8">
+        <p className="eyebrow mb-3">{t('brandEyebrow')}</p>
+        <h1 className="font-serif text-4xl font-medium tracking-[-0.04em] text-espresso">
+          {t('signUpTitle')}
+        </h1>
+        <p className="mt-3 text-sm leading-6 text-muted">{t('signUpSubtitle')}</p>
+      </div>
 
-        {error && (
-          <p className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg px-3 py-2 mb-4 text-center">
-            {error}
-          </p>
-        )}
+      {error && (
+        <p className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-700">
+          {error}
+        </p>
+      )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block">
+            <span className="field-label">{t('firstNamePlaceholder')}</span>
             <input
               className="input"
               placeholder={t('firstNamePlaceholder')}
@@ -61,6 +66,9 @@ export default function RegisterPage() {
               required
               autoFocus
             />
+          </label>
+          <label className="block">
+            <span className="field-label">{t('lastNamePlaceholder')}</span>
             <input
               className="input"
               placeholder={t('lastNamePlaceholder')}
@@ -68,7 +76,10 @@ export default function RegisterPage() {
               onChange={set('lastName')}
               required
             />
-          </div>
+          </label>
+        </div>
+        <label className="block">
+          <span className="field-label">{t('emailLabel')}</span>
           <input
             className="input"
             type="email"
@@ -77,6 +88,9 @@ export default function RegisterPage() {
             onChange={set('email')}
             required
           />
+        </label>
+        <label className="block">
+          <span className="field-label">{t('phonePlaceholder')}</span>
           <input
             className="input"
             type="tel"
@@ -85,31 +99,31 @@ export default function RegisterPage() {
             onChange={set('phone')}
             required
           />
+        </label>
+        <label className="block">
+          <span className="field-label">{t('passwordLabel')}</span>
           <input
             className="input"
             type="password"
-            placeholder={t('passwordPlaceholder') + ' (min. 8)'}
+            placeholder={`${t('passwordPlaceholder')} (min. 8)`}
             value={form.password}
             onChange={set('password')}
             required
             minLength={8}
           />
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-2.5 rounded-lg transition disabled:opacity-50"
-          >
-            {loading ? t('signingUpButton') : t('signUpButton')}
-          </button>
-        </form>
+        </label>
+        <button type="submit" disabled={loading} className="btn-primary mt-1 w-full">
+          {loading ? t('signingUpButton') : t('signUpButton')}
+          {!loading && <span aria-hidden="true">→</span>}
+        </button>
+      </form>
 
-        <p className="text-center text-sm text-gray-500 mt-5">
-          {t('alreadyHaveAccount')}{' '}
-          <Link to="/login" className="text-rose-600 font-medium hover:underline">
-            {t('loginLink')}
-          </Link>
-        </p>
-      </div>
-    </div>
+      <p className="mt-7 text-center text-sm text-muted">
+        {t('alreadyHaveAccount')}{' '}
+        <Link to="/login" className="font-bold text-brand-700 hover:text-brand-800">
+          {t('loginLink')}
+        </Link>
+      </p>
+    </AuthShell>
   );
 }

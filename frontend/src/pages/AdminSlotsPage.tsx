@@ -1,10 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api/apiClient';
 import type { Slot } from '../api/apiClient';
-import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../context/LanguageContext';
-import LanguageSelector from '../components/LanguageSelector';
 
 const DEFAULT_TIMES = [
   '09:00', '10:00', '11:00', '12:00',
@@ -38,8 +35,6 @@ function dateInDays(days: number): string {
 }
 
 export default function AdminSlotsPage() {
-  const { logout } = useAuth();
-  const navigate = useNavigate();
   const { t, language } = useTranslation();
 
   // Generate Slots Form state
@@ -62,11 +57,6 @@ export default function AdminSlotsPage() {
   const [editingSlotId, setEditingSlotId] = useState<string | null>(null);
   const [editTimeValue, setEditTimeValue] = useState<string>('');
   const [updatingSlotId, setUpdatingSlotId] = useState<string | null>(null);
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
 
   // Load slots for inspection
   const loadSlots = async () => {
@@ -228,43 +218,22 @@ export default function AdminSlotsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-rose-50">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
-          <div className="flex items-center gap-3">
-            <span className="text-xl font-bold text-rose-700">{t('adminPanel')}</span>
-            <span className="text-sm text-gray-500">{t('navSlots')}</span>
-          </div>
-          <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-            <Link to="/admin/users" className="text-gray-600 hover:text-rose-600 transition">
-              {t('navUsers')}
-            </Link>
-            <Link to="/admin/bookings" className="text-gray-600 hover:text-rose-600 transition">
-              {t('navBookings')}
-            </Link>
-            <Link to="/admin/slots" className="text-rose-700 font-semibold">
-              {t('navSlots')}
-            </Link>
-            <Link to="/home" className="text-gray-600 hover:text-rose-600 transition">
-              {t('navHome')}
-            </Link>
-            <LanguageSelector />
-            <button onClick={handleLogout} className="text-gray-500 hover:text-rose-600 transition">
-              {t('navLogout')}
-            </button>
-          </nav>
-        </div>
-      </header>
-
-      <main className="max-w-6xl mx-auto px-4 py-10">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">{t('manageSlotsTitle')}</h1>
+    <div className="space-y-6">
+      <div>
+        <p className="text-[9px] font-extrabold uppercase tracking-[0.18em] text-zinc-400">
+          {t('adminPanel')}
+        </p>
+        <h1 className="mt-1.5 text-2xl font-extrabold tracking-[-0.045em] text-studio-ink sm:text-3xl">
+          {t('manageSlotsTitle')}
+        </h1>
+      </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left / Generate Slots Card */}
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-              <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <span>📅</span> {t('bulkGenerateSlots')}
+              <h2 className="mb-4 text-base font-extrabold tracking-[-0.02em] text-studio-ink">
+                {t('bulkGenerateSlots')}
               </h2>
 
               <form onSubmit={handleGenerate} className="space-y-6">
@@ -382,8 +351,8 @@ export default function AdminSlotsPage() {
           {/* Right / Inspect & Delete Slots */}
           <div className="space-y-6">
             <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm min-h-[400px]">
-              <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <span>🔍</span> {t('inspectDailySlots')}
+              <h2 className="mb-4 text-base font-extrabold tracking-[-0.02em] text-studio-ink">
+                {t('inspectDailySlots')}
               </h2>
 
               <div className="mb-5">
@@ -513,7 +482,6 @@ export default function AdminSlotsPage() {
             </div>
           </div>
         </div>
-      </main>
     </div>
   );
 }

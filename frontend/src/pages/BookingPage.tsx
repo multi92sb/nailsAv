@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../api/apiClient';
 import type { Slot } from '../api/apiClient';
 import { useTranslation } from '../context/LanguageContext';
+import Brand from '../components/Brand';
 import LanguageSelector from '../components/LanguageSelector';
 
 const DAYS_EN = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
@@ -91,127 +92,221 @@ export default function BookingPage() {
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
   const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay();
   const availableSlots = slots.filter((s) => s.isAvailable);
+  const activeStep = selectedSlot ? 3 : selectedDate ? 2 : 1;
+  const dateLabel = selectedDate
+    ? new Date(`${selectedDate}T00:00:00`).toLocaleDateString(
+        language === 'sr' ? 'sr-RS' : 'en-US',
+        { weekday: 'long', month: 'long', day: 'numeric' },
+      )
+    : null;
 
   return (
-    <div className="min-h-screen bg-rose-50 py-10 px-4">
-      <div className="max-w-xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Link to="/home" className="text-gray-400 hover:text-rose-600 transition text-lg">←</Link>
-            <h1 className="text-2xl font-bold text-gray-800">{t('bookAppointmentTitle')}</h1>
+    <div className={`min-h-screen bg-ivory ${selectedSlot ? 'pb-28 lg:pb-0' : ''}`}>
+      <header className="border-b border-line/80 bg-ivory/90 backdrop-blur-md">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-5 sm:px-8">
+          <div className="flex items-center gap-5 sm:gap-8">
+            <Link to="/home" className="text-lg text-muted transition hover:text-espresso" aria-label={t('navHome')}>
+              ←
+            </Link>
+            <Brand />
           </div>
           <LanguageSelector />
         </div>
+      </header>
 
-        {/* Calendar */}
-        <div className="bg-white rounded-2xl shadow-sm p-5 mb-5">
-          <div className="flex justify-between items-center mb-4">
-            <button
-              onClick={prevMonth}
-              className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-lg text-gray-600 transition"
-            >
-              ‹
-            </button>
-            <span className="font-semibold text-gray-800">
-              {MONTHS[viewMonth]} {viewYear}
-            </span>
-            <button
-              onClick={nextMonth}
-              className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-lg text-gray-600 transition"
-            >
-              ›
-            </button>
-          </div>
-
-          {/* Day headers */}
-          <div className="grid grid-cols-7 mb-1">
-            {DAYS.map((d) => (
-              <div key={d} className="text-center text-xs text-gray-400 font-medium py-1">
-                {d}
-              </div>
-            ))}
-          </div>
-
-          {/* Day cells */}
-          <div className="grid grid-cols-7 gap-0.5">
-            {Array.from({ length: firstDayOfWeek }).map((_, i) => (
-              <div key={`pad-${i}`} />
-            ))}
-            {Array.from({ length: daysInMonth }).map((_, i) => {
-              const day = i + 1;
-              const dateStr = toDateStr(new Date(viewYear, viewMonth, day));
-              const past = isPastOrToday(viewYear, viewMonth, day);
-              const selected = selectedDate === dateStr;
-
-              return (
-                <button
-                  key={day}
-                  onClick={() => !past && setSelectedDate(dateStr)}
-                  disabled={past}
-                  className={[
-                    'aspect-square rounded-lg text-sm font-medium transition',
-                    past
-                      ? 'text-gray-300 cursor-not-allowed'
-                      : 'hover:bg-rose-100 cursor-pointer text-gray-700',
-                    selected ? 'bg-rose-600 text-white hover:bg-rose-600' : '',
-                  ].join(' ')}
-                >
-                  {day}
-                </button>
-              );
-            })}
-          </div>
+      <main className="mx-auto max-w-5xl px-5 py-10 sm:px-8 lg:py-14">
+        <div className="max-w-2xl">
+          <p className="eyebrow">{t('bookAppointmentTitle')}</p>
+          <h1 className="mt-3 font-serif text-4xl font-medium tracking-[-0.04em] text-espresso sm:text-5xl">
+            {t('bookingHeroTitle')}
+          </h1>
+          <p className="mt-4 text-sm leading-7 text-muted">{t('bookingHeroSubtitle')}</p>
         </div>
 
-        {/* Time slots */}
-        {selectedDate && (
-          <div className="bg-white rounded-2xl shadow-sm p-5 mb-5">
-            <h2 className="font-semibold text-gray-800 mb-3">
-              {t('availableTimesFor').split('{date}')[0]}
-              <span className="text-rose-600">{selectedDate}</span>
-              {t('availableTimesFor').split('{date}')[1] || ''}
-            </h2>
-            {slotsLoading && <p className="text-gray-400 text-sm">{t('loading')}</p>}
-            {!slotsLoading && availableSlots.length === 0 && (
-              <p className="text-gray-400 text-sm">{t('noAvailableSlots')}</p>
-            )}
-            <div className="grid grid-cols-3 gap-2">
-              {availableSlots.map((slot) => (
+        <div className="mt-8 flex flex-wrap items-center gap-3 text-[10px] font-bold uppercase tracking-[0.12em] text-muted/60">
+          {[t('stepDate'), t('stepTime'), t('stepConfirm')].map((step, index) => {
+            const number = index + 1;
+            return (
+              <div key={step} className="flex items-center gap-3">
+                <span className={number === activeStep ? 'text-brand-700' : ''}>
+                  0{number} {step}
+                </span>
+                {index < 2 && <span className="h-px w-7 bg-line" />}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-8 grid gap-6 lg:grid-cols-[1.35fr_.8fr] lg:items-start">
+          <div className="space-y-5">
+            <div className="card p-5 sm:p-7">
+              <div className="flex items-center justify-between gap-3">
                 <button
-                  key={slot.slotId}
-                  onClick={() => setSelectedSlot(slot)}
-                  className={[
-                    'py-2 rounded-lg text-sm font-medium border transition',
-                    selectedSlot?.slotId === slot.slotId
-                      ? 'border-rose-500 bg-rose-50 text-rose-700'
-                      : 'border-gray-200 hover:border-rose-400 text-gray-700',
-                  ].join(' ')}
+                  type="button"
+                  onClick={prevMonth}
+                  className="grid h-9 w-9 place-items-center rounded-full border border-line text-muted transition hover:border-brand-300 hover:text-espresso"
+                  aria-label="Previous month"
                 >
-                  {slot.time}
+                  ‹
                 </button>
-              ))}
+                <h2 className="text-center font-serif text-xl font-medium tracking-[-0.02em] text-espresso sm:text-2xl">
+                  {MONTHS[viewMonth]} {viewYear}
+                </h2>
+                <button
+                  type="button"
+                  onClick={nextMonth}
+                  className="grid h-9 w-9 place-items-center rounded-full border border-line text-muted transition hover:border-brand-300 hover:text-espresso"
+                  aria-label="Next month"
+                >
+                  ›
+                </button>
+              </div>
+
+              <div className="mt-6 grid grid-cols-7">
+                {DAYS.map((day) => (
+                  <div key={day} className="py-1 text-center text-[9px] font-extrabold uppercase tracking-[0.08em] text-muted/55">
+                    {day}
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-1 grid grid-cols-7 gap-1">
+                {Array.from({ length: firstDayOfWeek }).map((_, i) => (
+                  <div key={`pad-${i}`} />
+                ))}
+                {Array.from({ length: daysInMonth }).map((_, i) => {
+                  const day = i + 1;
+                  const dateStr = toDateStr(new Date(viewYear, viewMonth, day));
+                  const past = isPastOrToday(viewYear, viewMonth, day);
+                  const selected = selectedDate === dateStr;
+
+                  return (
+                    <button
+                      key={day}
+                      type="button"
+                      onClick={() => !past && setSelectedDate(dateStr)}
+                      disabled={past}
+                      className={[
+                        'relative aspect-square rounded-xl text-xs font-semibold transition sm:rounded-2xl sm:text-sm',
+                        past
+                          ? 'cursor-not-allowed text-muted/25'
+                          : 'text-espresso hover:bg-brand-50',
+                        selected
+                          ? 'bg-brand-400 text-white shadow-[0_10px_20px_rgba(201,142,134,.22)] hover:bg-brand-400'
+                          : '',
+                      ].join(' ')}
+                    >
+                      {day}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+
+            {selectedDate && (
+              <div className="card p-5 sm:p-7">
+                <div className="mb-4 flex items-end justify-between gap-3">
+                  <h2 className="font-serif text-xl font-medium text-espresso">
+                    {t('availableTimesFor').replace('{date}', dateLabel ?? selectedDate)}
+                  </h2>
+                </div>
+
+                {slotsLoading && (
+                  <div className="flex items-center gap-3 py-5 text-sm text-muted">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-brand-200 border-t-brand-400" />
+                    {t('loading')}
+                  </div>
+                )}
+
+                {!slotsLoading && availableSlots.length === 0 && (
+                  <p className="rounded-2xl border border-line bg-brand-50/60 px-4 py-5 text-sm text-muted">
+                    {t('noAvailableSlots')}
+                  </p>
+                )}
+
+                {!slotsLoading && availableSlots.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                    {availableSlots.map((slot) => (
+                      <button
+                        key={slot.slotId}
+                        type="button"
+                        onClick={() => setSelectedSlot(slot)}
+                        className={`rounded-full border py-2.5 text-xs font-bold transition ${
+                          selectedSlot?.slotId === slot.slotId
+                            ? 'border-brand-400 bg-brand-100 text-brand-700'
+                            : 'border-line bg-paper text-espresso hover:border-brand-300'
+                        }`}
+                      >
+                        {slot.time}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-        )}
+
+          <aside className="sticky top-24 hidden rounded-[2rem] bg-espresso p-7 text-ivory shadow-lift lg:block">
+            <p className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-ivory/45">
+              {t('appointmentSummary')}
+            </p>
+            <h2 className="mt-4 font-serif text-3xl font-medium leading-tight tracking-[-0.025em]">
+              {dateLabel ?? t('appointmentSummary')}
+            </h2>
+
+            <div className="mt-7 space-y-0 border-t border-ivory/15">
+              <div className="flex items-center justify-between border-b border-ivory/15 py-4 text-xs">
+                <span className="text-ivory/45">{t('detailsDate')}</span>
+                <span className="font-semibold">{selectedDate ?? '—'}</span>
+              </div>
+              <div className="flex items-center justify-between border-b border-ivory/15 py-4 text-xs">
+                <span className="text-ivory/45">{t('detailsTime')}</span>
+                <span className="font-semibold">{selectedSlot?.time ?? '—'}</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleBook}
+              disabled={!selectedSlot || booking}
+              className="mt-7 flex w-full items-center justify-between rounded-full bg-brand-400 px-5 py-3.5 text-xs font-bold text-white transition hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <span>{booking ? t('confirming') : t('confirmBooking').replace('{date}', selectedDate ?? '').replace('{time}', selectedSlot?.time ?? '')}</span>
+              {!booking && <span aria-hidden="true">→</span>}
+            </button>
+            <p className="mt-4 text-center text-[9px] leading-5 text-ivory/40">{t('selectTimePrompt')}</p>
+          </aside>
+        </div>
 
         {error && (
-          <p className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg px-3 py-2 mb-4">
+          <p className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </p>
         )}
+      </main>
 
-        {selectedSlot && (
-          <button
-            onClick={handleBook}
-            disabled={booking}
-            className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-3.5 rounded-xl transition disabled:opacity-50 shadow-sm"
-          >
-            {booking
-              ? t('confirming')
-              : t('confirmBooking').replace('{date}', selectedSlot.date).replace('{time}', selectedSlot.time)}
-          </button>
-        )}
-      </div>
+      {selectedSlot && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-paper/95 p-4 backdrop-blur-md lg:hidden">
+          <div className="mx-auto flex max-w-lg items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-muted/60">
+                {t('appointmentSummary')}
+              </p>
+              <p className="truncate text-xs font-bold text-espresso">
+                {dateLabel} · {selectedSlot.time}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleBook}
+              disabled={booking}
+              className="btn-primary shrink-0 px-5 py-2.5 text-xs"
+            >
+              {booking ? t('confirming') : t('stepConfirm')}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

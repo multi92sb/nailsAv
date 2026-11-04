@@ -14,7 +14,11 @@ export const sr: Record<keyof typeof import('./en').en, string> = {
   adminPanel: 'Admin Panel',
   loading: 'Učitavanje…',
 
-  // Auth Pages
+  // Brand & Auth Pages
+  brandEyebrow: 'Nail atelier · Beograd',
+  brandTitle: 'Nokti koji',
+  brandTitleAccent: 'izgledaju kao ti.',
+  brandSubtitle: 'Miran luksuz, pažljiv detalj i malo vremena samo za vas.',
   welcomeBack: 'Dobrodošli nazad',
   signInSubtitle: 'Prijavite se da biste upravljali rezervacijama',
   emailPlaceholder: 'Email adresa',
@@ -50,6 +54,13 @@ export const sr: Record<keyof typeof import('./en').en, string> = {
 
   // Booking Page
   bookAppointmentTitle: 'Rezervišite termin',
+  bookingHeroTitle: 'Izaberite svoj trenutak.',
+  bookingHeroSubtitle: 'Izaberite datum i vreme koji vam odgovaraju. Termin traje oko sat vremena.',
+  stepDate: 'Datum',
+  stepTime: 'Vreme',
+  stepConfirm: 'Potvrda',
+  appointmentSummary: 'Pregled termina',
+  selectTimePrompt: 'Izaberite vreme da nastavite.',
   availableTimesFor: 'Slobodni termini za {date}',
   noAvailableSlots: 'Nema slobodnih termina za ovaj datum.',
   confirmBooking: 'Potvrdi – {date} u {time}',

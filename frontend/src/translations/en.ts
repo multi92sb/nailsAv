@@ -14,7 +14,11 @@ export const en = {
   adminPanel: 'Admin Panel',
   loading: 'Loading…',
 
-  // Auth Pages
+  // Brand & Auth Pages
+  brandEyebrow: 'Nail atelier · Belgrade',
+  brandTitle: 'Nails that',
+  brandTitleAccent: 'feel like you.',
+  brandSubtitle: 'Quiet luxury, thoughtful detail and a little time just for yourself.',
   welcomeBack: 'Welcome Back',
   signInSubtitle: 'Sign in to manage your bookings',
   emailPlaceholder: 'Email address',
@@ -50,6 +54,13 @@ export const en = {
 
   // Booking Page
   bookAppointmentTitle: 'Book an Appointment',
+  bookingHeroTitle: 'Choose your moment.',
+  bookingHeroSubtitle: 'Select a date and time that suits you. Your appointment takes about an hour.',
+  stepDate: 'Date',
+  stepTime: 'Time',
+  stepConfirm: 'Confirm',
+  appointmentSummary: 'Appointment summary',
+  selectTimePrompt: 'Select a time to continue.',
   availableTimesFor: 'Available times for {date}',
   noAvailableSlots: 'No available slots for this date.',
   confirmBooking: 'Confirm – {date} at {time}',
