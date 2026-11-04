@@ -18,6 +18,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [redeemingId, setRedeemingId] = useState<string | null>(null);
 
   const loadUsers = async () => {
     try {
@@ -35,6 +36,19 @@ export default function AdminUsersPage() {
   useEffect(() => {
     loadUsers();
   }, []);
+
+  const handleRedeemLoyalty = async (userId: string) => {
+    if (!window.confirm(t('loyaltyRedeemConfirm'))) return;
+    setRedeemingId(userId);
+    try {
+      await api.adminRedeemLoyalty(userId);
+      window.alert(t('loyaltyRedeemSuccess'));
+    } catch {
+      window.alert(t('loyaltyRedeemNone'));
+    } finally {
+      setRedeemingId(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -80,6 +94,7 @@ export default function AdminUsersPage() {
                   <th className="px-5 py-3.5">{t('tablePhone')}</th>
                   <th className="px-5 py-3.5">{t('tableRole')}</th>
                   <th className="px-5 py-3.5">{t('tableCreated')}</th>
+                  <th className="px-5 py-3.5 text-right">{t('loyaltyTitle')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -103,6 +118,20 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="px-5 py-4 text-zinc-500">
                       {new Date(user.createdAt).toLocaleString(language === 'sr' ? 'sr-Latn-RS' : 'en-US')}
+                    </td>
+                    <td className="px-5 py-4 text-right">
+                      {user.role === 'USER' ? (
+                        <button
+                          type="button"
+                          onClick={() => handleRedeemLoyalty(user.userId)}
+                          disabled={redeemingId === user.userId}
+                          className="rounded-full border border-rose-200 px-3 py-1.5 text-[9px] font-extrabold text-coral transition hover:bg-[#FFF1F3] disabled:opacity-50"
+                        >
+                          {redeemingId === user.userId ? '…' : t('loyaltyRedeemButton')}
+                        </button>
+                      ) : (
+                        <span className="text-[9px] text-zinc-300">—</span>
+                      )}
                     </td>
                   </tr>
                 ))}

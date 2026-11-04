@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { Navigate, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/apiClient';
-import type { MyBooking, GalleryItem } from '../api/apiClient';
+import type { MyBooking, GalleryItem, LoyaltyStatus } from '../api/apiClient';
 import { useTranslation } from '../context/LanguageContext';
 import SiteHeader from '../components/SiteHeader';
+import LoyaltyProgress from '../components/LoyaltyProgress';
 
 function formatBookingDate(dateStr: string, language: string): string {
   const date = new Date(`${dateStr}T00:00:00`);
@@ -21,24 +22,30 @@ export default function HomePage() {
   const { t, language } = useTranslation();
   const [nextBooking, setNextBooking] = useState<MyBooking | null>(null);
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
+  const [loyalty, setLoyalty] = useState<LoyaltyStatus | null>(null);
 
   useEffect(() => {
     if (!user || user.role === 'ADMIN') return;
     let active = true;
     const today = new Date().toISOString().slice(0, 10);
 
-    Promise.allSettled([api.getMyBookings(), api.getMedia()]).then(([bookings, media]) => {
-      if (!active) return;
-      if (bookings.status === 'fulfilled') {
-        const upcoming = bookings.value.bookings
-          .filter((booking) => booking.date >= today && booking.status !== 'CANCELLED')
-          .sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`));
-        setNextBooking(upcoming[0] ?? null);
-      }
-      if (media.status === 'fulfilled') {
-        setGallery(media.value.media.slice(0, 3));
-      }
-    });
+    Promise.allSettled([api.getMyBookings(), api.getMedia(), api.getLoyalty()]).then(
+      ([bookings, media, loyaltyResult]) => {
+        if (!active) return;
+        if (bookings.status === 'fulfilled') {
+          const upcoming = bookings.value.bookings
+            .filter((booking) => booking.date >= today && booking.status !== 'CANCELLED')
+            .sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`));
+          setNextBooking(upcoming[0] ?? null);
+        }
+        if (media.status === 'fulfilled') {
+          setGallery(media.value.media.slice(0, 3));
+        }
+        if (loyaltyResult.status === 'fulfilled') {
+          setLoyalty(loyaltyResult.value.loyalty);
+        }
+      },
+    );
 
     return () => {
       active = false;
@@ -157,6 +164,12 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
+        {loyalty && (
+          <div className="mt-8">
+            <LoyaltyProgress loyalty={loyalty} />
+          </div>
+        )}
 
         <section className="mt-8 grid gap-4 sm:grid-cols-3">
           {[

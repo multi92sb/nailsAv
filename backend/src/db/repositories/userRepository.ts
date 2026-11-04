@@ -12,6 +12,8 @@ export interface User {
   password?: string;
   createdAt: string;
   updatedAt?: string;
+  loyaltyRedeemedCount?: number;
+  loyaltyLastRedeemedAt?: string;
 }
 
 export const UserRepository = {
@@ -124,6 +126,36 @@ export const UserRepository = {
         ConditionExpression: 'attribute_exists(PK) AND attribute_exists(SK)',
       }),
     );
+  },
+
+  async redeemLoyaltyReward(userId: string, expectedRedeemedCount: number): Promise<User | undefined> {
+    try {
+      const result = await docClient.send(
+        new UpdateCommand({
+          TableName: TABLE_NAME,
+          Key: {
+            PK: userPK(userId),
+            SK: userSK(),
+          },
+          UpdateExpression:
+            'SET loyaltyRedeemedCount = :next, loyaltyLastRedeemedAt = :now, updatedAt = :now',
+          ConditionExpression:
+            'attribute_exists(PK) AND (attribute_not_exists(loyaltyRedeemedCount) OR loyaltyRedeemedCount = :expected)',
+          ExpressionAttributeValues: {
+            ':next': expectedRedeemedCount + 1,
+            ':expected': expectedRedeemedCount,
+            ':now': new Date().toISOString(),
+          },
+          ReturnValues: 'ALL_NEW',
+        }),
+      );
+      return result.Attributes as User;
+    } catch (err) {
+      if ((err as { name?: string }).name === 'ConditionalCheckFailedException') {
+        return undefined;
+      }
+      throw err;
+    }
   },
 
   async scanAll(): Promise<User[]> {

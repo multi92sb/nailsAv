@@ -104,6 +104,17 @@ export interface UserProfile {
   createdAt: string;
 }
 
+export interface LoyaltyStatus {
+  completedVisits: number;
+  visitsRequired: number;
+  progress: number;
+  rewardsEarned: number;
+  rewardsRedeemed: number;
+  rewardsAvailable: number;
+  discountPercent: number;
+  nextRewardIn: number;
+}
+
 export interface GalleryItem {
   id: string;
   key?: string;
@@ -221,4 +232,13 @@ export const api = {
 
   updateMe: (body: { firstName?: string; lastName?: string; phone?: string }) =>
     request<{ user: UserProfile }>('/me', { method: 'PATCH', body, auth: true }),
+
+  getLoyalty: () => request<{ loyalty: LoyaltyStatus }>('/loyalty', { auth: true }),
+
+  adminRedeemLoyalty: (userId: string) =>
+    request<{ userId: string; loyalty: LoyaltyStatus }>('/admin/loyalty/redeem', {
+      method: 'POST',
+      body: { userId },
+      auth: true,
+    }),
 };

@@ -252,6 +252,24 @@ functions:
           authorizer:
             name: jwtAuthorizer
 
+  getLoyalty:
+    handler: src/handlers/getLoyalty.handler
+    events:
+      - httpApi:
+          path: /loyalty
+          method: GET
+          authorizer:
+            name: jwtAuthorizer
+
+  adminRedeemLoyalty:
+    handler: src/handlers/adminRedeemLoyalty.handler
+    events:
+      - httpApi:
+          path: /admin/loyalty/redeem
+          method: POST
+          authorizer:
+            name: jwtAuthorizer
+
   adminGenerateSlots:
     handler: src/handlers/adminGenerateSlots.handler
     events:

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { api } from '../api/apiClient';
+import { api, type LoyaltyStatus } from '../api/apiClient';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../context/LanguageContext';
 import SiteHeader from '../components/SiteHeader';
+import LoyaltyProgress from '../components/LoyaltyProgress';
 
 export default function ProfilePage() {
   const { user, login } = useAuth();
@@ -17,17 +18,19 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [loyalty, setLoyalty] = useState<LoyaltyStatus | null>(null);
 
   useEffect(() => {
     async function load() {
       try {
-        const res = await api.getMe();
+        const [res, loyaltyRes] = await Promise.all([api.getMe(), api.getLoyalty()]);
         const u = res.user;
         setForm({
           firstName: u.firstName,
           lastName: u.lastName,
           phone: u.phone,
         });
+        setLoyalty(loyaltyRes.loyalty);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load profile');
       } finally {
@@ -155,6 +158,12 @@ export default function ProfilePage() {
                 </button>
               </form>
             </div>
+          </div>
+        )}
+
+        {!loading && loyalty && (
+          <div className="mt-5">
+            <LoyaltyProgress loyalty={loyalty} compact />
           </div>
         )}
       </main>

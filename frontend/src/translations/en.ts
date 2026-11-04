@@ -52,6 +52,16 @@ export const en = {
   bookAppointment: 'Book Appointment',
   myUpcomingBookings: 'My Upcoming Appointments',
   noUpcomingBookings: "You don't have any upcoming appointments. Book your next visit today!",
+  loyaltyTitle: 'Your loyalty',
+  loyaltyProgress: '{completed} of {target} completed visits',
+  loyaltyNext: '{count} more visits until {discount}% off',
+  loyaltyReady: 'Your {discount}% reward is ready',
+  loyaltyReadyHint: 'Mention it at your next visit. The salon will mark it as used.',
+  loyaltyTotalVisits: '{count} total visits',
+  loyaltyRedeemButton: 'Redeem 20%',
+  loyaltyRedeemConfirm: 'Mark the 20% loyalty reward as used for this client?',
+  loyaltyRedeemSuccess: 'The 20% loyalty reward is marked as used.',
+  loyaltyRedeemNone: 'This client has no loyalty reward available.',
 
   // Booking Page
   bookAppointmentTitle: 'Book an Appointment',

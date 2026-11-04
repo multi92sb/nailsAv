@@ -52,6 +52,16 @@ export const sr: Record<keyof typeof import('./en').en, string> = {
   bookAppointment: 'Rezerviši termin',
   myUpcomingBookings: 'Moji predstojeći termini',
   noUpcomingBookings: 'Nemate predstojećih termina. Rezervišite sledeći već danas!',
+  loyaltyTitle: 'Vaša vernost',
+  loyaltyProgress: '{completed} od {target} završenih poseta',
+  loyaltyNext: 'Još {count} poseta do {discount}% popusta',
+  loyaltyReady: 'Vaš popust od {discount}% je spreman',
+  loyaltyReadyHint: 'Navedite ga pri sledećoj poseti. Salon će ga označiti kao iskorišćen.',
+  loyaltyTotalVisits: '{count} ukupno poseta',
+  loyaltyRedeemButton: 'Iskoristi 20%',
+  loyaltyRedeemConfirm: 'Označiti loyalty popust od 20% kao iskorišćen za ovu klijentkinju?',
+  loyaltyRedeemSuccess: 'Loyalty popust od 20% je označen kao iskorišćen.',
+  loyaltyRedeemNone: 'Ova klijentkinja nema dostupan loyalty popust.',
 
   // Booking Page
   bookAppointmentTitle: 'Rezervišite termin',
