@@ -53,6 +53,7 @@ export const en = {
   myUpcomingBookings: 'My Upcoming Appointments',
   noUpcomingBookings: "You don't have any upcoming appointments. Book your next visit today!",
   loyaltyTitle: 'Your loyalty',
+  loyaltyAdminColumn: 'Client loyalty',
   loyaltyProgress: '{completed} of {target} completed visits',
   loyaltyNext: '{count} more visits until {discount}% off',
   loyaltyReady: 'Your {discount}% reward is ready',

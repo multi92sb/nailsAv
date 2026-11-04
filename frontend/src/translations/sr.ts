@@ -53,6 +53,7 @@ export const sr: Record<keyof typeof import('./en').en, string> = {
   myUpcomingBookings: 'Moji predstojeći termini',
   noUpcomingBookings: 'Nemate predstojećih termina. Rezervišite sledeći već danas!',
   loyaltyTitle: 'Vaša vernost',
+  loyaltyAdminColumn: 'Vernost klijenata',
   loyaltyProgress: '{completed} od {target} završenih poseta',
   loyaltyNext: 'Još {count} poseta do {discount}% popusta',
   loyaltyReady: 'Vaš popust od {discount}% je spreman',

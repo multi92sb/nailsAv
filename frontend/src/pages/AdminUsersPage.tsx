@@ -102,7 +102,7 @@ export default function AdminUsersPage() {
                   <th className="px-5 py-3.5">{t('tablePhone')}</th>
                   <th className="px-5 py-3.5">{t('tableRole')}</th>
                   <th className="px-5 py-3.5">{t('tableCreated')}</th>
-                  <th className="px-5 py-3.5 text-right">{t('loyaltyTitle')}</th>
+                  <th className="px-5 py-3.5 text-right">{t('loyaltyAdminColumn')}</th>
                 </tr>
               </thead>
               <tbody>
